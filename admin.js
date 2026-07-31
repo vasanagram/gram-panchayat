@@ -89,7 +89,12 @@ async function uploadToSupabase(file) {
   alert(file.type);
 alert(file.name);
 
-  const fileName = Date.now() + "_" + file.name;
+  const extension = file.name.split(".").pop();
+
+const fileName =
+  Date.now() + "_" +
+  Math.random().toString(36).substring(2,8) +
+  "." + extension;
   
   alert("Uploading...");
 
