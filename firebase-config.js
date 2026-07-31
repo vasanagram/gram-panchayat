@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebas
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxq401x9TSuV8Ec67p1ArGwTa3NzuGS3w",
@@ -18,3 +19,8 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
+
+const supabaseUrl = "https://qvtfyrocixvnpxtpnauy.supabase.co";
+const supabaseKey = "sb_publishable_WPvymatxCr3-oxZ7gS1plA_xHDc329T";
+
+export const supabase = createClient(supabaseUrl, supabaseKey);

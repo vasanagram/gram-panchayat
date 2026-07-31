@@ -1,4 +1,4 @@
-import { db, auth } from "./firebase-config.js";
+import { db, auth, supabase } from "./firebase-config.js";
 
 import {
 collection,
@@ -84,48 +84,36 @@ refreshDashboard();
 const CLOUD_NAME = "f62hvppq";
 const UPLOAD_PRESET = "gram_upload_auto";
 
-async function uploadToCloudinary(file) {
-alert(location.origin);
-alert(navigator.userAgent);
-  console.log(file);
-console.log(file.type);
-console.log("Uploading to Cloudinary...");
-
-alert(file.type);
+async function uploadToSupabase(file) {
+  
+  alert(file.type);
 alert(file.name);
 
-const formData = new FormData();
-formData.append("file", file);
-formData.append("upload_preset", UPLOAD_PRESET);
-formData.append("resource_type", "auto");
-
-try {
-alert("Before Fetch");
-    const response = await fetch(
-  `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
-  {
-    method: "POST",
-    mode: "cors",
-    body: formData
-  }
-);
-alert("After Fetch");
-  const text = await response.text();
-
-alert(text);
-    console.log("Status:", response.status);
-
+  const fileName = Date.now() + "_" + file.name;
   
-} catch (e) {
-  console.error(e);
+  alert("Uploading...");
 
-  alert(
-    "Name: " + e.name +
-    "\nMessage: " + e.message
-  );
+  const { data, error } = await supabase.storage
+  .from("uploads")
+  .upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: true
+  });
 
-  throw e;
+console.log(data);
+console.log(error);
+
+  if (error) {
+  console.log(error);
+  alert(JSON.stringify(error, null, 2));
+  throw error;
 }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("uploads")
+    .getPublicUrl(fileName);
+
+  return publicUrlData.publicUrl;
 }
 
 function previewImage(inputId, previewId) {
@@ -158,7 +146,7 @@ previewImage("stampFile", "stampPreview");
 previewImage("memberImageFile", "memberImagePreview");
 previewImage("noticeFile", "noticePreview");
 previewImage("galleryImageFile","galleryPreview");
-previewImage("documentFile","documentPreview");
+
 /*=========================================
 WEBSITE SETTINGS
 =========================================*/
@@ -225,23 +213,23 @@ websiteForm?.addEventListener("submit", async (e) => {
     let stamp = oldData.stampImage || "";
 
     if (document.getElementById("logoFile").files.length > 0) {
-      logo = await uploadToCloudinary(document.getElementById("logoFile").files[0]);
+      logo = await uploadToSupabase(document.getElementById("logoFile").files[0]);
     }
 
     if (document.getElementById("bannerFile").files.length > 0) {
-      banner = await uploadToCloudinary(document.getElementById("bannerFile").files[0]);
+      banner = await uploadToSupabase(document.getElementById("bannerFile").files[0]);
     }
 
     if (document.getElementById("sarpanchImageFile").files.length > 0) {
-      sarpanchImage = await uploadToCloudinary(document.getElementById("sarpanchImageFile").files[0]);
+      sarpanchImage = await uploadToSupabase(document.getElementById("sarpanchImageFile").files[0]);
     }
 
     if (document.getElementById("signatureFile").files.length > 0) {
-      signature = await uploadToCloudinary(document.getElementById("signatureFile").files[0]);
+      signature = await uploadToSupabase(document.getElementById("signatureFile").files[0]);
     }
 
     if (document.getElementById("stampFile").files.length > 0) {
-      stamp = await uploadToCloudinary(document.getElementById("stampFile").files[0]);
+      stamp = await uploadToSupabase(document.getElementById("stampFile").files[0]);
     }
 
     await setDoc(doc(db, "website", "settings"), {
@@ -292,7 +280,7 @@ e.preventDefault();
 let memberImage = "";
 
 if (document.getElementById("memberImageFile").files.length > 0) {
-  memberImage = await uploadToCloudinary(
+  memberImage = await uploadToSupabase(
     document.getElementById("memberImageFile").files[0]
   );
 }
@@ -434,7 +422,7 @@ let noticeFile = "";
 const fileInput = document.getElementById("noticeFile");
 
 if (fileInput.files.length > 0) {
-  noticeFile = await uploadToCloudinary(fileInput.files[0]);
+  noticeFile = await uploadToSupabase(fileInput.files[0]);
 }
 
 await addDoc(collection(db, "notices"), {
@@ -583,7 +571,7 @@ let galleryImage = "";
 
 if(document.getElementById("galleryImageFile").files.length>0){
 
-galleryImage = await uploadToCloudinary(
+galleryImage = await uploadToSupabase(
 document.getElementById("galleryImageFile").files[0]
 );
 
@@ -1004,12 +992,12 @@ documentForm?.addEventListener("submit", async (e) => {
 
     if (fileInput.files.length > 0) {
 
-      documentUrl = await uploadToCloudinary(fileInput.files[0]);
+      documentUrl = await uploadToSupabase(fileInput.files[0]);
 
     }
 
 if (!documentUrl) {
-  throw new Error("Cloudinary Upload Failed");
+  throw new Error("Supabase Upload Failed");
 }
 
     await addDoc(collection(db, "documents"), {
@@ -1026,7 +1014,10 @@ if (!documentUrl) {
 
     documentForm.reset();
 
-    document.getElementById("documentPreview").src = "";
+    const preview = document.getElementById("documentPreview");
+if (preview) {
+  preview.src = "";
+}
 
     loadDocuments();
 
