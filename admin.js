@@ -97,7 +97,8 @@ alert(file.name);
   .from("uploads")
   .upload(fileName, file, {
     cacheControl: "3600",
-    upsert: true
+    upsert: true,
+    contentType: "application/pdf"
   });
 
 console.log(data);
