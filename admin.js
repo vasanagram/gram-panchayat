@@ -110,17 +110,12 @@ alert("Before Fetch");
   }
 );
 alert("After Fetch");
+  const text = await response.text();
+
+alert(text);
     console.log("Status:", response.status);
 
-    const data = await response.json();
-    console.log(data);
-
-    if (!response.ok) {
-      throw new Error(JSON.stringify(data));
-    }
-
-    return data.secure_url;
-
+  
 } catch (e) {
   console.error(e);
 
