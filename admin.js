@@ -104,8 +104,13 @@ console.log(data);
 console.log(error);
 
   if (error) {
-  console.log(error);
-  alert(JSON.stringify(error, null, 2));
+  alert(
+    "Message: " + error.message +
+    "\nStatus: " + error.status +
+    "\nStatusCode: " + error.statusCode +
+    "\nName: " + error.name
+  );
+
   throw error;
 }
 
