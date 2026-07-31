@@ -85,40 +85,49 @@ const CLOUD_NAME = "f62hvppq";
 const UPLOAD_PRESET = "gram_upload_auto";
 
 async function uploadToSupabase(file) {
-  
+
   alert(file.type);
-alert(file.name);
+  alert(file.name);
+  alert(file.size);
 
-  const extension = file.name.split(".").pop();
+  const extension = file.name.split(".").pop().toLowerCase();
 
-const fileName =
-  Date.now() + "_" +
-  Math.random().toString(36).substring(2,8) +
-  "." + extension;
-  
+  const fileName =
+    Date.now() +
+    "_" +
+    Math.random().toString(36).substring(2, 8) +
+    "." +
+    extension;
+
+  // File ને Blob માં ફેરવો
+  const arrayBuffer = await file.arrayBuffer();
+
+  const blob = new Blob([arrayBuffer], {
+    type: file.type || "application/pdf"
+  });
+
   alert("Uploading...");
 
   const { data, error } = await supabase.storage
-  .from("uploads")
-  .upload(fileName, file, {
-    cacheControl: "3600",
-    upsert: true,
-    contentType: "application/pdf"
-  });
+    .from("uploads")
+    .upload(fileName, blob, {
+      cacheControl: "3600",
+      upsert: true,
+      contentType: file.type || "application/pdf"
+    });
 
-console.log(data);
-console.log(error);
+  console.log(data);
+  console.log(error);
 
   if (error) {
-  alert(
-    "Message: " + error.message +
-    "\nStatus: " + error.status +
-    "\nStatusCode: " + error.statusCode +
-    "\nName: " + error.name
-  );
-
-  throw error;
-}
+    alert(
+      "Message: " + error.message +
+      "\nStatus: " + error.status +
+      "\nStatusCode: " + error.statusCode +
+      "\nName: " + error.name
+    );
+    throw error;
+  }
 
   const { data: publicUrlData } = supabase.storage
     .from("uploads")
