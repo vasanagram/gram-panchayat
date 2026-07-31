@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="gu">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ગ્રામ પંચાયત એડમિન પેનલ</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="admin-wrapper">
+
+<!-- Sidebar -->
+
+<aside class="sidebar">
+
+<h2>Admin Panel</h2>
+
+<ul class="sidebar-menu">
+
+<li><a href="#dashboard"><i class="fa fa-home"></i> Dashboard</a></li>
+
+<li><a href="#website"><i class="fa fa-globe"></i> Website Settings</a></li>
+
+<li><a href="#members"><i class="fa fa-users"></i> Members</a></li>
+
+<li><a href="#notice"><i class="fa fa-bullhorn"></i> Notice</a></li>
+
+<li><a href="#gallery"><i class="fa fa-image"></i> Gallery</a></li>
+
+<li><a href="#videos"><i class="fa fa-video"></i> Videos</a></li>
+
+<li><a href="#gramsabha"><i class="fa fa-building"></i> Gram Sabha</a></li>
+
+<li><a href="#resolution"><i class="fa fa-file"></i> Resolution</a></li>
+
+<li><a href="#documents"><i class="fa fa-folder"></i> Documents</a></li>
+
+<li><a href="#schemes"><i class="fa fa-list"></i> Schemes</a></li>
+
+<li><a href="#complaints"><i class="fa fa-comment"></i> Complaints</a></li>
+
+<li><a href="#tax"><i class="fa fa-money-bill"></i> Tax</a></li>
+
+</ul>
+
+</aside>
+
+<!-- Main -->
+
+<main class="admin-content">
+
+<section id="dashboard" class="admin-section">
+
+<h1>Dashboard</h1>
+
+<div class="dashboard-cards">
+
+<div class="card">
+
+<h2 id="memberCount">0</h2>
+
+<p>Members</p>
+
+</div>
+
+<div class="card">
+
+<h2 id="noticeCount">0</h2>
+
+<p>Notices</p>
+
+</div>
+
+<div class="card">
+
+<h2 id="galleryCount">0</h2>
+
+<p>Gallery</p>
+
+</div>
+
+<div class="card">
+
+<h2 id="complaintCount">0</h2>
+
+<p>Complaints</p>
+
+</div>
+
+<div class="card">
+  <h2 id="totalApplications">0</h2>
+  <p>કુલ અરજીઓ</p>
+</div>
+
+<div class="card">
+  <h2 id="pendingApplications">0</h2>
+  <p>Pending</p>
+</div>
+
+<div class="card">
+  <h2 id="approvedApplications">0</h2>
+  <p>Approved</p>
+</div>
+
+<div class="card">
+  <h2 id="rejectedApplications">0</h2>
+  <p>Rejected</p>
+</div>
+
+</div>
+
+</section>
+<!-- Website Settings -->
+
+<section id="website" class="admin-section">
+
+<h2>Website Settings</h2>
+
+<form id="websiteForm">
+
+<input type="text" id="websiteName" placeholder="વેબસાઇટનું નામ">
+
+<input type="text" id="bannerTitle" placeholder="બેનર શીર્ષક">
+
+<textarea id="bannerSubtitle" placeholder="બેનર વર્ણન"></textarea>
+
+<input type="text" id="sarpanchName" placeholder="સરપંચનું નામ">
+
+<textarea id="sarpanchMessage" placeholder="સરપંચનો સંદેશ"></textarea>
+
+<label>ગ્રામ પંચાયત Logo</label>
+<input type="file" id="logoFile" accept="image/*">
+<img id="logoPreview" width="120">
+
+<label>બેનર</label>
+<input type="file" id="bannerFile" accept="image/*">
+<img id="bannerPreview" width="180">
+
+<label>સરપંચ ફોટો</label>
+<input type="file" id="sarpanchImageFile" accept="image/*">
+<img id="sarpanchPreview" width="120">
+
+<label>સરપંચ સહી</label>
+<input type="file" id="signatureFile" accept="image/*">
+<img id="signaturePreview" width="120">
+
+<label>ગ્રામ પંચાયત સીલ</label>
+<input type="file" id="stampFile" accept="image/*">
+<img id="stampPreview" width="120">
+
+<input type="text" id="panchayatMobile" placeholder="ગ્રામ પંચાયત મોબાઇલ નંબર">
+
+<input type="email" id="panchayatEmail" placeholder="ગ્રામ પંચાયત ઈમેઇલ">
+
+<input type="text" id="panchayatAddress" placeholder="ગ્રામ પંચાયત સરનામું">
+
+<input type="text" id="websiteUrl" placeholder="વેબસાઇટ URL">
+
+<button type="submit">Save Website</button>
+
+</form>
+
+</section>
+
+<!-- Members -->
+
+<section id="members" class="admin-section">
+
+<h2>સભ્યો ઉમેરો</h2>
+
+<form id="memberForm">
+
+<input type="text" id="memberName" placeholder="નામ">
+
+<input type="text" id="memberPosition" placeholder="હોદ્દો">
+
+<input type="file" id="memberImageFile" accept="image/*">
+<img id="memberImagePreview" width="100" style="margin-top:10px;border-radius:8px;">
+
+<button type="submit">સભ્ય ઉમેરો</button>
+
+</form>
+
+<div id="memberList"></div>
+
+</section>
+
+<!-- Notice -->
+
+<section id="notice" class="admin-section">
+
+<h2>નવી નોટિસ</h2>
+
+<form id="noticeForm">
+
+<input type="text" id="noticeTitle" placeholder="શીર્ષક">
+
+<textarea id="noticeDescription" placeholder="વિગત"></textarea>
+
+<input type="date" id="noticeDate">
+<input type="file" id="noticeFile" accept="image/*,.pdf">
+
+<img id="noticePreview" width="100" style="margin-top:10px;border-radius:8px;">
+<button type="submit">નોટિસ સેવ કરો</button>
+
+</form>
+
+<div id="noticeList"></div>
+
+</section>
+
+<!-- Gallery -->
+
+<section id="gallery" class="admin-section">
+
+<h2>ફોટો ગેલેરી</h2>
+
+<form id="galleryForm">
+
+<input type="text" id="galleryTitle" placeholder="ફોટો શીર્ષક">
+
+<input type="file" id="galleryImageFile" accept="image/*">
+
+<img id="galleryPreview" width="120" style="margin-top:10px;border-radius:8px;">
+
+<button type="submit">ફોટો ઉમેરો</button>
+
+</form>
+
+<div id="galleryList"></div>
+
+</section>
+
+<!-- Video Gallery -->
+
+<section id="videos" class="admin-section">
+
+<h2>વિડિયો ગેલેરી</h2>
+
+<form id="videoForm">
+
+<input type="text" id="videoTitle" placeholder="વિડિયો શીર્ષક">
+
+<input type="text" id="videoUrl" placeholder="YouTube Embed URL">
+
+<button type="submit">વિડિયો ઉમેરો</button>
+
+</form>
+
+<div id="videoList"></div>
+
+</section>
+<!-- Gram Sabha -->
+
+<section id="gramsabha" class="admin-section">
+
+<h2>ગ્રામ સભા</h2>
+
+<form id="gramsabhaForm">
+
+<input type="text" id="gsTitle" placeholder="શીર્ષક">
+
+<input type="date" id="gsDate">
+
+<input type="time" id="gsTime">
+
+<input type="text" id="gsPlace" placeholder="સ્થળ">
+
+<textarea id="gsDescription" placeholder="વિગત"></textarea>
+
+<button type="submit">ગ્રામ સભા સેવ કરો</button>
+
+</form>
+
+<div id="gramsabhaList"></div>
+
+</section>
+
+<!-- Resolution -->
+
+<section id="resolution" class="admin-section">
+
+<h2>ઠરાવો</h2>
+
+<form id="resolutionForm">
+
+<input type="text" id="resolutionTitle" placeholder="ઠરાવ શીર્ષક">
+
+<textarea id="resolutionDescription" placeholder="વિગત"></textarea>
+
+<input type="text" id="resolutionFile" placeholder="PDF URL">
+
+<button type="submit">ઠરાવ ઉમેરો</button>
+
+</form>
+
+<div id="resolutionList"></div>
+
+</section>
+
+<!-- Documents -->
+
+<section id="documents" class="admin-section">
+
+<h2>દસ્તાવેજો</h2>
+
+<form id="documentForm">
+
+<input type="text" id="documentTitle" placeholder="દસ્તાવેજ નામ">
+
+<input type="file" id="documentFile" accept=".pdf,image/*">
+
+<img id="documentPreview" width="100" style="margin-top:10px;border-radius:8px;">
+
+<button type="submit">દસ્તાવેજ ઉમેરો</button>
+
+</form>
+
+<div id="documentList"></div>
+
+</section>
+
+<h2>📄 Online Applications</h2>
+
+<input
+  type="text"
+  id="searchApplication"
+  placeholder="અરજી નંબર અથવા નામ શોધો..."
+  onkeyup="searchApplications()"
+  style="width:100%;padding:10px;margin:10px 0;">
+<div class="table-responsive">
+<table border="1" width="100%">
+  <thead>
+    <tr>
+      <th>અરજી નંબર</th>
+      <th>સેવા</th>
+      <th>નામ</th>
+      <th>મોબાઇલ</th>
+      <th>સ્થિતિ</th>
+      <th>દસ્તાવેજ</th>
+      <th>View</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+
+  <tbody id="applicationsList"></tbody>
+</table>
+</div>
+<!-- Government Schemes -->
+
+<section id="schemes" class="admin-section">
+
+<h2>સરકારી યોજનાઓ</h2>
+
+<form id="schemeForm">
+
+<input type="text" id="schemeTitle" placeholder="યોજનાનું નામ">
+
+<textarea id="schemeDescription" placeholder="વિગત"></textarea>
+
+<button type="submit">યોજના ઉમેરો</button>
+
+</form>
+
+<div id="schemeList"></div>
+
+</section>
+
+<!-- Complaints -->
+
+<section id="complaints" class="admin-section">
+
+<h2>ફરિયાદો</h2>
+
+<div id="complaintList"></div>
+
+</section>
+
+<!-- Tax -->
+
+<section id="tax" class="admin-section">
+
+<h2>ટેક્સ માહિતી</h2>
+
+<form id="taxForm">
+
+<input type="text" id="taxTitle" placeholder="ટેક્સનું નામ">
+
+<input type="text" id="taxAmount" placeholder="રકમ">
+
+<input type="text" id="taxQr" placeholder="QR Code Image URL">
+
+<button type="submit">સેવ કરો</button>
+
+</form>
+
+<div id="taxList"></div>
+
+</section>
+<!-- Backup -->
+
+<section id="backup" class="admin-section">
+
+<h2>Backup</h2>
+
+<div class="backup-box">
+
+<button id="backupBtn">
+<i class="fa-solid fa-download"></i>
+ Backup લો
+</button>
+
+<button id="restoreBtn">
+<i class="fa-solid fa-upload"></i>
+ Restore
+</button>
+
+</div>
+
+</section>
+
+<!-- Logout -->
+
+<section id="logout" class="admin-section">
+
+<button id="logoutBtn" class="logout-btn">
+
+<i class="fa-solid fa-right-from-bracket"></i>
+
+Logout
+
+</button>
+
+</section>
+
+</main>
+
+<div id="printSection" style="display:none;background:#fff;padding:30px;width:794px;">
+
+  <div style="text-align:center;">
+    <img id="printLogo" src="" width="90">
+
+    <h2 id="printWebsiteName"></h2>
+
+    <div id="printAddress"></div>
+
+    <div id="printContact"></div>
+
+    <hr>
+  </div>
+
+  <table border="1" cellpadding="10" cellspacing="0"
+  style="width:100%;border-collapse:collapse;">
+
+    <tr>
+      <td>અરજી નંબર</td>
+      <td id="pApplicationNo"></td>
+    </tr>
+
+    <tr>
+      <td>નામ</td>
+      <td id="pName"></td>
+    </tr>
+
+    <tr>
+      <td>મોબાઇલ</td>
+      <td id="pMobile"></td>
+    </tr>
+
+    <tr>
+      <td>સેવા</td>
+      <td id="pService"></td>
+    </tr>
+
+    <tr>
+      <td>સ્થિતિ</td>
+      <td id="pStatus"></td>
+    </tr>
+
+  </table>
+
+  <br><br><br>
+
+  <div style="display:flex;justify-content:space-between;">
+
+    <div style="text-align:center;">
+      <img id="printStamp" width="100"><br>
+      પંચાયત સીલ
+    </div>
+
+    <div style="text-align:center;">
+      <img id="printSignature" width="120"><br>
+      <span id="printSarpanch"></span><br>
+      સરપંચ
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script type="module" src="admin.js"></script>
+
+</body>
+
+</html>
