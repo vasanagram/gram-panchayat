@@ -100,7 +100,7 @@ formData.append("upload_preset", UPLOAD_PRESET);
 formData.append("resource_type", "auto");
 
 try {
-
+alert("Before Fetch");
     const response = await fetch(
   `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
   {
@@ -109,7 +109,7 @@ try {
     body: formData
   }
 );
-
+alert("After Fetch");
     console.log("Status:", response.status);
 
     const data = await response.json();
