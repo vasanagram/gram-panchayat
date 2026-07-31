@@ -85,7 +85,8 @@ const CLOUD_NAME = "f62hvppq";
 const UPLOAD_PRESET = "gram_upload_auto";
 
 async function uploadToCloudinary(file) {
-
+alert(location.origin);
+alert(navigator.userAgent);
   console.log(file);
 console.log(file.type);
 console.log("Uploading to Cloudinary...");
