@@ -930,29 +930,46 @@ window.editGramSabha = editGramSabha;
 RESOLUTIONS
 =========================================*/
 
-const resolutionForm=document.getElementById("resolutionForm");
+const resolutionForm = document.getElementById("resolutionForm");
 
-resolutionForm?.addEventListener("submit",async(e)=>{
+resolutionForm?.addEventListener("submit", async (e) => {
 
-e.preventDefault();
+  e.preventDefault();
 
-await addDoc(collection(db,"resolutions"),{
+  try {
 
-title:document.getElementById("resolutionTitle").value,
+    let pdfUrl = "";
 
-description:document.getElementById("resolutionDescription").value,
+    const fileInput = document.getElementById("resolutionFile");
 
-file:document.getElementById("resolutionFile").value,
+    if (fileInput.files.length > 0) {
+      pdfUrl = await uploadToSupabase(fileInput.files[0]);
+    }
 
-createdAt:serverTimestamp()
+    if (!pdfUrl) {
+      throw new Error("PDF Upload Failed");
+    }
 
-});
+    await addDoc(collection(db, "resolutions"), {
+      title: document.getElementById("resolutionTitle").value,
+      description: document.getElementById("resolutionDescription").value,
+      file: pdfUrl,
+      createdAt: serverTimestamp()
+    });
 
-alert("ઠરાવ ઉમેરાયો.");
+    alert("ઠરાવ સફળતાપૂર્વક ઉમેરાયો.");
 
-resolutionForm.reset();
+    resolutionForm.reset();
 
-loadResolutions();
+    loadResolutions();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(error.message);
+
+  }
 
 });
 
@@ -1226,42 +1243,80 @@ list.innerHTML = html;
 loadComplaints();
 
 /*=========================================
-TAX
+PROPERTY TAX
 =========================================*/
 
-const taxForm = document.getElementById("taxForm");
+previewImage("taxQrFile","taxQrPreview");
 
-taxForm?.addEventListener("submit", async (e) => {
+const propertyTaxForm = document.getElementById("propertyTaxForm");
+
+propertyTaxForm?.addEventListener("submit", async (e)=>{
 
 e.preventDefault();
 
-await addDoc(collection(db, "tax"), {
+try{
 
-title: document.getElementById("taxTitle").value,
+let qrUrl="";
 
-amount: document.getElementById("taxAmount").value,
+const qrFile=document.getElementById("taxQrFile");
 
-qr: document.getElementById("taxQr").value,
+if(qrFile.files.length>0){
 
-createdAt: serverTimestamp()
+qrUrl=await uploadToSupabase(qrFile.files[0]);
+
+}
+
+await addDoc(collection(db,"propertyTax"),{
+
+propertyNo:document.getElementById("propertyNo").value.trim(),
+
+houseNo:document.getElementById("houseNo").value.trim(),
+
+ownerName:document.getElementById("ownerName").value.trim(),
+
+ownerMobile:document.getElementById("ownerMobile").value.trim(),
+
+taxAmount:Number(document.getElementById("taxAmount").value),
+
+taxYear:document.getElementById("taxYear").value,
+
+lastDate:document.getElementById("lastDate").value,
+
+qr:qrUrl,
+
+createdAt:serverTimestamp()
 
 });
 
-alert("ટેક્સ માહિતી સેવ થઈ ગઈ.");
+alert("મિલકત વેરાની માહિતી સફળતાપૂર્વક સેવ થઈ ગઈ.");
 
-taxForm.reset();
+propertyTaxForm.reset();
 
-loadTax();
+document.getElementById("taxQrPreview").src="";
+
+loadPropertyTax();
+
+}catch(error){
+
+console.error(error);
+
+alert(error.message);
+
+}
 
 });
 
-async function loadTax() {
+/*=========================================
+LOAD PROPERTY TAX
+=========================================*/
 
-const list = document.getElementById("taxList");
+async function loadPropertyTax() {
+
+const list = document.getElementById("propertyTaxList");
 
 if (!list) return;
 
-const snapshot = await getDocs(collection(db, "tax"));
+const snapshot = await getDocs(collection(db, "propertyTax"));
 
 let html = "";
 
@@ -1273,11 +1328,46 @@ html += `
 
 <div class="admin-item">
 
-<h3>${data.title}</h3>
+<div>
 
-<p>₹ ${data.amount}</p>
+<h3>${data.ownerName}</h3>
 
-<img src="${data.qr}" width="120">
+<p><b>મિલકત નંબર :</b> ${data.propertyNo}</p>
+
+<p><b>ઘર નંબર :</b> ${data.houseNo}</p>
+
+<p><b>વેરો :</b> ₹ ${data.taxAmount}</p>
+
+<p><b>વર્ષ :</b> ${data.taxYear}</p>
+
+${data.qr ? `
+<img
+  src="${data.qr}"
+  width="160"
+  style="
+    margin-top:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    padding:4px;
+    background:#fff;
+  ">
+` : ""}
+
+</div>
+
+<div class="admin-actions">
+
+<button class="edit-btn"
+onclick="editPropertyTax('${item.id}')">
+Edit
+</button>
+
+<button class="delete-btn"
+onclick="deletePropertyTax('${item.id}')">
+Delete
+</button>
+
+</div>
 
 </div>
 
@@ -1289,7 +1379,114 @@ list.innerHTML = html;
 
 }
 
-loadTax();
+loadPropertyTax();
+
+/*=========================================
+SEARCH PROPERTY TAX
+=========================================*/
+
+document.getElementById("searchPropertyTax")
+?.addEventListener("keyup", function(){
+
+const value=this.value.toLowerCase();
+
+const items=document.querySelectorAll("#propertyTaxList .admin-item");
+
+items.forEach(item=>{
+
+if(item.innerText.toLowerCase().includes(value)){
+
+item.style.display="flex";
+
+}else{
+
+item.style.display="none";
+
+}
+
+});
+
+});
+
+/*=========================================
+EDIT PROPERTY TAX
+=========================================*/
+
+async function editPropertyTax(id){
+
+const ref = doc(db,"propertyTax",id);
+
+const snap = await getDoc(ref);
+
+if(!snap.exists()) return;
+
+const data = snap.data();
+
+const propertyNo = prompt("મિલકત નંબર",data.propertyNo);
+if(propertyNo===null) return;
+
+const houseNo = prompt("ઘર નંબર",data.houseNo);
+if(houseNo===null) return;
+
+const ownerName = prompt("મિલકતધારકનું નામ",data.ownerName);
+if(ownerName===null) return;
+
+const ownerMobile = prompt("મોબાઇલ નંબર",data.ownerMobile || "");
+if(ownerMobile===null) return;
+
+const taxAmount = prompt("વેરાની રકમ",data.taxAmount);
+if(taxAmount===null) return;
+
+const taxYear = prompt("વર્ષ",data.taxYear);
+if(taxYear===null) return;
+
+const lastDate = prompt("છેલ્લી તારીખ",data.lastDate || "");
+if(lastDate===null) return;
+
+await updateDoc(ref,{
+
+propertyNo,
+houseNo,
+ownerName,
+ownerMobile,
+taxAmount:Number(taxAmount),
+taxYear,
+lastDate
+
+});
+
+alert("માહિતી સફળતાપૂર્વક સુધારાઈ.");
+
+loadPropertyTax();
+
+refreshDashboard();
+
+}
+
+window.editPropertyTax = editPropertyTax;
+
+
+/*=========================================
+DELETE PROPERTY TAX
+=========================================*/
+
+async function deletePropertyTax(id){
+
+if(!confirm("શું આ મિલકતનો રેકોર્ડ કાઢી નાખવો છે?")){
+return;
+}
+
+await deleteDoc(doc(db,"propertyTax",id));
+
+alert("રેકોર્ડ સફળતાપૂર્વક કાઢી નાખવામાં આવ્યો.");
+
+loadPropertyTax();
+
+refreshDashboard();
+
+}
+
+window.deletePropertyTax = deletePropertyTax;
 
 /*=========================================
 BACKUP
@@ -1306,6 +1503,104 @@ document.getElementById("restoreBtn")?.addEventListener("click", () => {
 alert("Restore Feature આગામી Version માં ઉમેરવામાં આવશે.");
 
 });
+
+/*=========================================
+PROPERTY TAX PAYMENTS
+=========================================*/
+
+async function loadTaxPayments(){
+
+const list=document.getElementById("taxPaymentsList");
+
+if(!list) return;
+
+const snapshot=await getDocs(collection(db,"taxPayments"));
+
+let html="";
+
+snapshot.forEach(item=>{
+
+const data=item.data();
+
+html+=`
+
+<div class="admin-item">
+
+<div>
+
+<h3>🏠 ${data.propertyNo}</h3>
+
+<p><b>UTR :</b> ${data.utr}</p>
+
+<p><b>Status :</b> ${data.status}</p>
+
+<a href="${data.screenshot}" target="_blank">
+ચુકવણી Screenshot જુઓ
+</a>
+
+</div>
+
+<div class="admin-actions">
+
+<button onclick="approveTaxPayment('${item.id}')">
+✅ Approve
+</button>
+
+<button onclick="rejectTaxPayment('${item.id}')">
+❌ Reject
+</button>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+list.innerHTML=html;
+
+}
+
+loadTaxPayments();
+
+async function approveTaxPayment(id){
+
+const receiptNo = prompt("પહોંચ નંબર દાખલ કરો");
+
+if(!receiptNo){
+  return;
+}
+
+await updateDoc(doc(db,"taxPayments",id),{
+  status:"Receipt Ready",
+  receiptNo: receiptNo,
+  receiptDate: new Date().toLocaleDateString("en-GB")
+});
+
+alert("પહોંચ તૈયાર થઈ ગઈ.");
+
+loadTaxPayments();
+
+}
+
+window.approveTaxPayment = approveTaxPayment;
+
+async function rejectTaxPayment(id){
+
+const ok = confirm("શું તમે આ ચુકવણીની માહિતી કાઢી નાખવા માંગો છો?");
+
+if(!ok) return;
+
+await deleteDoc(doc(db,"taxPayments",id));
+
+alert("ચુકવણીની માહિતી સફળતાપૂર્વક કાઢી નાખવામાં આવી.");
+
+loadTaxPayments();
+
+}
+
+window.rejectTaxPayment = rejectTaxPayment;
 
 /*=========================================
 LOGOUT
@@ -1578,3 +1873,115 @@ async function printApplication(id) {
 }
 
 window.printApplication = printApplication;
+
+document.getElementById("importTaxPdf")?.addEventListener("click", importPropertyTaxPdf);
+
+async function importPropertyTaxPdf(){
+
+const files =
+document.getElementById("taxPdfFiles").files;
+
+if(!files.length){
+
+alert("PDF પસંદ કરો.");
+
+return;
+
+}
+
+const progress =
+document.getElementById("importProgress");
+
+const result =
+document.getElementById("importResult");
+
+progress.innerHTML="PDF વાંચી રહ્યા છીએ...";
+
+result.innerHTML="";
+
+for(let f=0; f<files.length; f++){
+
+const file=files[f];
+
+const reader=new FileReader();
+
+reader.onload=async function(){
+
+const typedarray=new Uint8Array(this.result);
+
+const pdf=
+await pdfjsLib.getDocument({data:typedarray}).promise;
+
+let fullText = "";
+
+const propertyList = [];
+
+const propertyRecords = [];
+
+for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
+
+progress.innerHTML=
+"Page "+pageNo+" / "+pdf.numPages;
+
+const page=
+await pdf.getPage(pageNo);
+
+const viewport = page.getViewport({ scale: 2 });
+
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = viewport.width;
+canvas.height = viewport.height;
+
+await page.render({
+  canvasContext: ctx,
+  viewport: viewport
+}).promise;
+
+const text = await page.getTextContent();
+
+const pageText = text.items
+  .map(item => item.str)
+  .join(" ");
+
+fullText += pageText + "\n";
+
+}
+const lines = fullText.split("\n");
+
+for (const line of lines) {
+
+  const clean = line.trim();
+
+  if (!clean) continue;
+
+  const match = clean.match(/^(\d+)\s+(\d+\/?\d*)/);
+
+  if (!match) continue;
+
+  propertyRecords.push({
+    propertyNo: match[1],
+    houseNo: match[2],
+    raw: clean
+  });
+
+}
+
+console.log(propertyRecords);
+result.innerHTML = `
+<h3>OCR Result</h3>
+
+<textarea
+style="width:100%;height:400px;font-size:14px;">
+${fullText}
+</textarea>
+`;
+
+};
+
+reader.readAsArrayBuffer(file);
+
+}
+
+}

@@ -50,7 +50,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 
 <li><a href="#complaints"><i class="fa fa-comment"></i> Complaints</a></li>
 
-<li><a href="#tax"><i class="fa fa-money-bill"></i> Tax</a></li>
+<li><a href="#propertyTax"><i class="fa fa-house"></i> Property Tax</a></li>
+
+<li><a href="#taxPayments"><i class="fa fa-money-check-dollar"></i> વેરા ચુકવણી</a></li>
 
 </ul>
 
@@ -299,7 +301,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 
 <textarea id="resolutionDescription" placeholder="વિગત"></textarea>
 
-<input type="text" id="resolutionFile" placeholder="PDF URL">
+<input type="file" id="resolutionFile" accept=".pdf">
 
 <button type="submit">ઠરાવ ઉમેરો</button>
 
@@ -386,27 +388,81 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 
 </section>
 
-<!-- Tax -->
+<!-- Property Tax Management -->
 
-<section id="tax" class="admin-section">
+<section id="propertyTax" class="admin-section">
 
-<h2>ટેક્સ માહિતી</h2>
+<h2>🏠 મિલકત વેરા વ્યવસ્થાપન</h2>
 
-<form id="taxForm">
+<form id="propertyTaxForm">
 
-<input type="text" id="taxTitle" placeholder="ટેક્સનું નામ">
+<input type="text" id="propertyNo" placeholder="મિલકત નંબર" required>
 
-<input type="text" id="taxAmount" placeholder="રકમ">
+<input type="text" id="houseNo" placeholder="ઘર નંબર" required>
 
-<input type="text" id="taxQr" placeholder="QR Code Image URL">
+<input type="text" id="ownerName" placeholder="મિલકતધારકનું નામ" required>
 
-<button type="submit">સેવ કરો</button>
+<input type="text" id="ownerMobile" placeholder="મોબાઇલ નંબર">
+
+<input type="number" id="taxAmount" placeholder="વેરાની રકમ" required>
+
+<input type="text" id="taxYear" value="2026-27">
+
+<input type="date" id="lastDate">
+
+<label>QR Code</label>
+
+<input type="file" id="taxQrFile" accept="image/*">
+
+<img id="taxQrPreview"
+width="120"
+style="margin-top:10px;border-radius:8px;display:block;">
+
+<button type="submit">
+💾 સેવ કરો
+</button>
 
 </form>
 
-<div id="taxList"></div>
+<hr>
+
+<h3>📄 eGram PDF Import</h3>
+
+<input
+type="file"
+id="taxPdfFiles"
+accept=".pdf"
+multiple>
+
+<button id="importTaxPdf">
+📥 eGram PDF Import કરો
+</button>
+
+<div id="importProgress" style="margin-top:15px;"></div>
+
+<div id="importResult" style="margin-top:10px;"></div>
+
+<hr>
+
+<input
+type="text"
+id="searchPropertyTax"
+placeholder="મિલકત નંબર અથવા ઘર નંબર શોધો">
+
+<div id="propertyTaxList"></div>
 
 </section>
+
+<!-- Property Tax Payments -->
+
+<section id="taxPayments" class="admin-section">
+
+<h2>💳 વેરા ચુકવણી</h2>
+
+<div id="taxPaymentsList"></div>
+
+</section>
+
 <!-- Backup -->
 
 <section id="backup" class="admin-section">
@@ -512,8 +568,14 @@ Logout
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
+
 <script type="module" src="admin.js?v=20260731"></script>
 
-</body>
+<script type="module" src="property-import.js"></script>
 
+
+</body>
 </html>

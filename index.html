@@ -308,9 +308,9 @@ alt="સરપંચશ્રી">
     <h3>મિલકત આકારણી</h3>
 </div>
 
-<div class="service-card" onclick="openService('tax')">
-    <i class="fa-solid fa-money-bill"></i>
-    <h3>ટેક્સ</h3>
+<div class="service-card" onclick="openPropertyTax()">
+    <i class="fa-solid fa-house-circle-check"></i>
+    <h3>મિલકત વેરો</h3>
 </div>
 
 <div class="service-card" onclick="openService('complaint')">
@@ -679,6 +679,124 @@ All Rights Reserved.
     </button>
 
     <div id="applicationResult"></div>
+
+  </div>
+
+</div>
+
+<!-- Property Tax Popup -->
+
+<div id="propertyTaxPopup" class="popup" style="display:none;">
+
+  <div class="popup-content">
+
+    <span class="close" onclick="closePropertyTax()">&times;</span>
+
+    <h2>🏠 મિલકત વેરો તપાસો</h2>
+
+    <input
+      type="text"
+      id="propertySearch"
+      placeholder="મિલકત નંબર">
+
+    <p style="text-align:center;margin:10px 0;">અથવા</p>
+
+    <input
+      type="text"
+      id="houseSearch"
+      placeholder="ઘર નંબર">
+
+    <button id="searchPropertyBtn" type="button">
+      🔍 શોધો
+    </button>
+
+    <div id="propertyResult" style="margin-top:20px;"></div>
+
+  </div>
+
+</div>
+
+<!-- Payment Popup -->
+
+<div id="paymentPopup" class="popup" style="display:none;">
+
+<div class="popup-content">
+
+<span class="close"
+onclick="closePaymentPopup()">
+&times;
+</span>
+
+<h2>💳 વેરા ચુકવણી માહિતી</h2>
+
+<input
+type="text"
+id="paymentPropertyNo"
+placeholder="મિલકત નંબર"
+readonly>
+
+<input
+type="text"
+id="paymentUTR"
+placeholder="UTR નંબર">
+
+<label>ચુકવણી Screenshot</label>
+
+<input
+type="file"
+id="paymentScreenshot"
+accept="image/*"
+required>
+
+<button id="submitPaymentBtn">
+<i class="fa-solid fa-paper-plane"></i>
+ચુકવણી મોકલો
+</button>
+
+</div>
+
+</div>
+
+<!-- Success Popup -->
+
+<div id="successPopup" class="popup" style="display:none;">
+
+  <div class="popup-content" style="text-align:center;max-width:420px;">
+
+    <div style="font-size:70px;">✅</div>
+
+    <h2 style="color:#198754;">
+      ચુકવણી સફળ
+    </h2>
+
+    <p style="font-size:17px;line-height:28px;">
+
+      તમારી વેરા ચુકવણીની માહિતી સફળતાપૂર્વક ગ્રામ પંચાયતને મોકલવામાં આવી છે.
+
+      <br><br>
+
+      📄 કૃપા કરીને વેરાની સત્તાવાર પહોંચ મેળવવા માટે ગ્રામ પંચાયત કચેરીમાં પધારશો.
+
+      <br><br>
+
+      🙏 ગ્રામ પંચાયતની ઓનલાઈન સેવા ઉપયોગ કરવા બદલ આપનો હાર્દિક આભાર.
+
+    </p>
+
+    <button
+      onclick="closeSuccessPopup()"
+      style="
+      margin-top:20px;
+      background:#198754;
+      color:#fff;
+      border:none;
+      padding:12px 25px;
+      border-radius:8px;
+      font-size:16px;
+      cursor:pointer;
+      ">
+      ઠીક છે
+    </button>
 
   </div>
 

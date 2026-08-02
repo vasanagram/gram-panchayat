@@ -1,4 +1,4 @@
- import { db } from "./firebase-config.js";
+ import { db, supabase } from "./firebase-config.js";
 
 import {
   collection,
@@ -13,6 +13,57 @@ import {
   query,
   where
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+/*=========================================
+SUPABASE UPLOAD
+=========================================*/
+
+async function uploadToSupabase(file){
+
+const extension=file.name.split(".").pop().toLowerCase();
+
+const fileName=
+Date.now()+"_"+
+Math.random().toString(36).substring(2,8)+
+"."+extension;
+
+const arrayBuffer=await file.arrayBuffer();
+
+const blob=new Blob([arrayBuffer],{
+
+type:file.type
+
+});
+
+const {error}=await supabase.storage
+
+.from("uploads")
+
+.upload(fileName,blob,{
+
+cacheControl:"3600",
+
+upsert:true,
+
+contentType:file.type
+
+});
+
+if(error){
+
+throw error;
+
+}
+
+const {data}=supabase.storage
+
+.from("uploads")
+
+.getPublicUrl(fileName);
+
+return data.publicUrl;
+
+}
 
 /*=========================================
 LOADER
@@ -734,24 +785,12 @@ serviceForm?.addEventListener("submit", async (e) => {
 
         const file = files[i];
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", "gram_panchayat_upload");
+        const url = await uploadToSupabase(file);
 
-        const response = await fetch(
-          "https://api.cloudinary.com/v1_1/f62hvppq/auto/upload",
-          {
-            method: "POST",
-            body: formData
-          }
-        );
-
-        const data = await response.json();
-
-        documentUrls.push({
-          name: file.name,
-          url: data.secure_url
-        });
+documentUrls.push({
+  name: file.name,
+  url: url
+});
 
       }
 
@@ -849,3 +888,243 @@ function closeStatusPopup() {
 
 window.openStatusPopup = openStatusPopup;
 window.closeStatusPopup = closeStatusPopup;
+
+/*=========================================
+PROPERTY TAX POPUP
+=========================================*/
+
+function openPropertyTax(){
+
+document.getElementById("propertyTaxPopup").style.display="flex";
+
+document.getElementById("propertyResult").innerHTML="";
+
+document.getElementById("propertySearch").value="";
+
+document.getElementById("houseSearch").value="";
+
+}
+
+function closePropertyTax(){
+
+document.getElementById("propertyTaxPopup").style.display="none";
+
+}
+
+window.openPropertyTax=openPropertyTax;
+
+window.closePropertyTax=closePropertyTax;
+
+/*=========================================
+PROPERTY TAX SEARCH
+=========================================*/
+
+const propertySearchBtn =
+document.getElementById("searchPropertyBtn");
+
+propertySearchBtn?.addEventListener("click",async()=>{
+
+const propertyNo=
+document.getElementById("propertySearch").value.trim();
+
+const houseNo=
+document.getElementById("houseSearch").value.trim();
+
+if(!propertyNo && !houseNo){
+
+alert("મિલકત નંબર અથવા ઘર નંબર દાખલ કરો.");
+
+return;
+
+}
+
+let q;
+
+if(propertyNo){
+
+q=query(
+collection(db,"propertyTax"),
+where("propertyNo","==",propertyNo)
+);
+
+}else{
+
+q=query(
+collection(db,"propertyTax"),
+where("houseNo","==",houseNo)
+);
+
+}
+
+const snapshot=await getDocs(q);
+
+const result=document.getElementById("propertyResult");
+
+if(snapshot.empty){
+
+result.innerHTML =
+"<h3>❌ કોઈ રેકોર્ડ મળ્યો નથી.</h3>";
+
+return;
+
+}
+
+const data = snapshot.docs[0].data();
+
+let receiptMessage = "";
+
+const paymentQuery = query(
+  collection(db,"taxPayments"),
+  where("propertyNo","==",data.propertyNo)
+);
+
+const paymentSnapshot = await getDocs(paymentQuery);
+
+if(!paymentSnapshot.empty){
+
+  const payment = paymentSnapshot.docs[0].data();
+
+  if(payment.status==="Receipt Ready"){
+
+    receiptMessage = `
+      <div style="margin-top:20px;padding:15px;background:#d4edda;border:2px solid green;border-radius:10px;">
+        <h3>✅ તમારો વેરો ચકાસવામાં આવ્યો છે.</h3>
+
+        <p><b>પહોંચ નંબર :</b> ${payment.receiptNo}</p>
+
+        <p><b>તારીખ :</b> ${payment.receiptDate}</p>
+
+        <p>📄 કૃપા કરીને ગ્રામ પંચાયત કચેરીથી સત્તાવાર પહોંચ મેળવી જશો.</p>
+      </div>
+    `;
+
+  }
+
+}
+
+result.innerHTML = `
+
+<div class="tax-result-card">
+
+<h3>🏠 ${data.ownerName}</h3>
+
+<p><b>મિલકત નંબર :</b> ${data.propertyNo}</p>
+
+<p><b>ઘર નંબર :</b> ${data.houseNo}</p>
+
+<p><b>વેરાની રકમ :</b> ₹ ${data.taxAmount}</p>
+
+<p><b>વર્ષ :</b> ${data.taxYear}</p>
+
+<p><b>છેલ્લી તારીખ :</b> ${data.lastDate}</p>
+
+${data.qr ? `
+<img src="${data.qr}" width="180" style="margin:15px 0;border-radius:8px;">
+` : ""}
+
+<button id="paidTaxBtn">
+✅ મેં વેરો ભરી દીધો
+</button>
+
+</div>
+
+${receiptMessage}
+
+`;
+
+document.getElementById("paidTaxBtn").addEventListener("click",()=>{
+
+document.getElementById("paymentPopup").style.display="flex";
+
+document.getElementById("paymentPropertyNo").value=data.propertyNo;
+
+});
+
+});
+
+/*=========================================
+SUBMIT PROPERTY TAX PAYMENT
+=========================================*/
+
+const submitPaymentBtn =
+document.getElementById("submitPaymentBtn");
+
+submitPaymentBtn?.addEventListener("click", async ()=>{
+
+try{
+
+const propertyNo =
+document.getElementById("paymentPropertyNo").value;
+
+const utr =
+document.getElementById("paymentUTR").value.trim();
+
+const file =
+document.getElementById("paymentScreenshot").files[0];
+
+if(!utr){
+
+alert("UTR નંબર દાખલ કરો.");
+
+return;
+
+}
+
+if(!file){
+
+alert("ચુકવણીનો Screenshot પસંદ કરો.");
+
+return;
+
+}
+
+const screenshot =
+await uploadToSupabase(file);
+
+await addDoc(collection(db,"taxPayments"),{
+
+propertyNo,
+utr,
+screenshot,
+status:"Pending",
+createdAt:serverTimestamp()
+
+});
+
+closePaymentPopup();
+
+document.getElementById("successPopup").style.display="flex";
+
+closePaymentPopup();
+
+document.getElementById("successPopup").style.display = "flex";
+
+}catch(error){
+
+console.error(error);
+
+alert(error.message);
+
+}
+
+});
+
+/*=========================================
+PAYMENT POPUP
+=========================================*/
+
+function closePaymentPopup(){
+
+document.getElementById("paymentPopup").style.display="none";
+
+}
+
+window.closePaymentPopup = closePaymentPopup;
+
+function closeSuccessPopup(){
+
+document.getElementById("successPopup").style.display = "none";
+
+}
+
+window.closeSuccessPopup = closeSuccessPopup;
