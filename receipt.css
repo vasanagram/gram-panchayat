@@ -1,0 +1,260 @@
+body{
+    margin:0;
+    padding:20px;
+    background:#f5f5f5;
+    font-family:sans-serif;
+}
+
+.receipt{
+    position:relative;
+    width:210mm;
+    min-height:auto;
+    height:auto;
+    margin:auto;
+    padding:10mm;
+    background:#fff;
+    border:2px solid #0b7c4a;
+    box-sizing:border-box;
+    overflow:visible;
+
+    display:flex;
+    flex-direction:column;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.receipt::before{
+    content:"";
+    position:absolute;
+    top:8px;
+    left:8px;
+    right:8px;
+    bottom:8px;
+    border:1px solid #0b7c4a;
+    pointer-events:none;
+}
+
+.header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#0b7c4a;
+    color:#fff;
+    padding:16px;
+    margin:-10mm -10mm 18px -10mm;
+}
+
+.logo{
+    width:80px;
+    height:80px;
+    object-fit:contain;
+}
+
+.title{
+    flex:1;
+    text-align:center;
+}
+
+.title h2{
+    margin:0;
+    color:#fff;
+    font-size:26px;
+}
+
+.title h3{
+    margin:6px 0;
+    color:#fff;
+    font-size:18px;
+}
+
+.title p{
+    margin:0;
+    color:#f5f5f5;
+    font-size:13px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+table td{
+    border:1px solid #ccc;
+    padding:6px;
+    font-size:14px;
+}
+
+table td:first-child{
+    width:35%;
+    font-weight:bold;
+    background:#eef9f2;
+}
+
+table tr:nth-child(even){
+    background:#f8fff8;
+}
+
+.qr-box{
+    width:140px;
+    text-align:center;
+}
+
+.qr-box img{
+    width:100px;
+    height:100px;
+}
+
+.watermark{
+    position:absolute;
+    top:55%;
+    left:50%;
+    transform:translate(-50%,-50%) rotate(-30deg);
+    font-size:70px;
+    font-weight:bold;
+    color:rgba(0,128,0,0.08);
+    pointer-events:none;
+    white-space:nowrap;
+}
+
+.seal{
+    width:90px;
+    height:90px;
+    display:block;
+    margin:auto;
+}
+
+.footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-top:35px;
+    gap:15px;
+}
+
+.footer>div{
+    flex:1;
+    text-align:center;
+}
+
+.button-area{
+    margin-top:20px;
+    text-align:center;
+}
+
+.button-area button{
+    padding:10px 22px;
+    border:none;
+    border-radius:6px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    margin:0 8px;
+}
+
+.print-btn{
+    background:#0b7c4a;
+    color:#fff;
+}
+
+.pdf-btn{
+    background:#1565c0;
+    color:#fff;
+}
+
+.button-area button:hover{
+    opacity:.9;
+}
+
+@page{
+    size:A4;
+    margin:8mm;
+}
+
+@media print{
+
+body{
+    margin:0;
+    padding:0;
+    background:#fff;
+}
+
+.receipt{
+    width:194mm;
+    min-height:279mm;
+    height:auto;
+    margin:0;
+    padding:8mm;
+    border:none;
+    overflow:visible;
+}
+
+.button-area{
+    display:none;
+}
+
+/* Receipt Fine Tuning */
+
+hr{
+    border:none;
+    border-top:1px solid #999;
+    margin:12px 0;
+}
+
+p{
+    margin:4px 0;
+}
+
+img{
+    max-width:100%;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+@media screen{
+
+.receipt{
+    box-shadow:0 0 15px rgba(0,0,0,.15);
+}
+
+}
+
+@media print{
+
+.watermark{
+    opacity:.10;
+}
+
+.qr-box img{
+    width:85px !important;
+    height:85px !important;
+}
+
+.seal{
+    width:80px !important;
+    height:80px !important;
+}
+
+table td{
+    padding:5px;
+    font-size:13px;
+}
+
+.footer{
+    margin-top:20px;
+}
+
+}
+
+.footer{
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+table{
+    page-break-inside: avoid;
+    break-inside: avoid;
+}

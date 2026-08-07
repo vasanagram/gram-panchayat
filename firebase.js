@@ -970,7 +970,15 @@ return;
 }
 
 const data = snapshot.docs[0].data();
+const websiteSnap = await getDoc(
+    doc(db, "website", "settings")
+);
 
+let taxQr = "";
+
+if (websiteSnap.exists()) {
+    taxQr = websiteSnap.data().taxQr || "";
+}
 let receiptMessage = "";
 
 const paymentQuery = query(
@@ -1018,13 +1026,32 @@ result.innerHTML = `
 
 <p><b>છેલ્લી તારીખ :</b> ${data.lastDate}</p>
 
-${data.qr ? `
-<img src="${data.qr}" width="180" style="margin:15px 0;border-radius:8px;">
-` : ""}
+${taxQr ? `
+<div style="text-align:center;margin:15px 0;">
 
-<button id="paidTaxBtn">
-✅ મેં વેરો ભરી દીધો
+<img
+src="${taxQr}"
+width="180"
+style="margin:15px 0;border-radius:8px;">
+
+<p><b>📱 પહેલા QR Scan કરીને મિલકત વેરો ભરો.</b></p>
+
+<button
+id="showPaidBtn"
+style="
+margin-top:10px;
+background:#0d6efd;
+color:#fff;
+border:none;
+padding:10px 18px;
+border-radius:8px;
+cursor:pointer;
+">
+✅ મેં QR દ્વારા મિલકત વેરો ભરી દીધો
 </button>
+
+</div>
+` : ""}
 
 </div>
 
@@ -1032,7 +1059,7 @@ ${receiptMessage}
 
 `;
 
-document.getElementById("paidTaxBtn").addEventListener("click",()=>{
+document.getElementById("showPaidBtn").addEventListener("click",()=>{
 
 document.getElementById("paymentPopup").style.display="flex";
 

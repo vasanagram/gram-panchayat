@@ -1547,3 +1547,27 @@ table td button{
   width:100%;
   overflow-x:auto;
 }
+
+.payment-actions{
+  display:flex;
+  gap:10px;
+  margin:15px 0;
+  flex-wrap:wrap;
+}
+
+.payment-actions button{
+  flex:1;
+  min-width:150px;
+}
+
+@media (max-width:768px){
+
+  .payment-actions{
+    flex-direction:column;
+  }
+
+  .payment-actions button{
+    width:100%;
+  }
+
+}

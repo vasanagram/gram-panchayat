@@ -50,9 +50,15 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 
 <li><a href="#complaints"><i class="fa fa-comment"></i> Complaints</a></li>
 
-<li><a href="#propertyTax"><i class="fa fa-house"></i> Property Tax</a></li>
+<li><a href="#property"><i class="fa fa-house"></i> Property Tax</a></li>
 
 <li><a href="#taxPayments"><i class="fa fa-money-check-dollar"></i> વેરા ચુકવણી</a></li>
+
+<li>
+  <a href="#backup">
+    <i class="fa fa-database"></i> Backup
+  </a>
+</li>
 
 </ul>
 
@@ -65,6 +71,19 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 <section id="dashboard" class="admin-section">
 
 <h1>Dashboard</h1>
+
+<div id="paymentNotification"
+style="
+display:none;
+background:#fff3cd;
+border:1px solid #ffc107;
+padding:12px;
+border-radius:8px;
+margin-bottom:20px;
+font-size:16px;
+font-weight:bold;
+color:#856404;">
+</div>
 
 <div class="dashboard-cards">
 
@@ -120,7 +139,47 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
   <p>Rejected</p>
 </div>
 
+<div class="card">
+  <h2 id="totalTaxCollection">₹0</h2>
+  <p>કુલ વેરા વસૂલાત</p>
 </div>
+
+<div class="card">
+  <h2 id="pendingTaxPayments">0</h2>
+  <p>Pending Payments</p>
+</div>
+
+<div class="card">
+  <h2 id="approvedTaxPayments">0</h2>
+  <p>Approved Payments</p>
+</div>
+
+<div class="card">
+  <h2 id="rejectedTaxPayments">0</h2>
+  <p>Rejected Payments</p>
+</div>
+
+<div class="dashboard-cards">
+
+  <div class="dashboard-card">
+    <h3>📅 આ મહિનાનો વેરો</h3>
+    <h2 id="monthlyTaxCollection">₹ 0</h2>
+  </div>
+
+  <div class="dashboard-card">
+    <h3>🗓️ આ વર્ષનો વેરો</h3>
+    <h2 id="yearlyTaxCollection">₹ 0</h2>
+  </div>
+
+</div>
+
+</div>
+
+<hr>
+
+<h2>📈 વેરા ચુકવણી ગ્રાફ</h2>
+
+<canvas id="taxChart" height="120"></canvas>
 
 </section>
 <!-- Website Settings -->
@@ -161,6 +220,17 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 <input type="file" id="stampFile" accept="image/*">
 <img id="stampPreview" width="120">
 
+<label>મિલકત વેરા QR Code</label>
+
+<input
+type="file"
+id="taxQrFile"
+accept="image/*">
+
+<img
+id="taxQrPreview"
+width="120">
+
 <input type="text" id="panchayatMobile" placeholder="ગ્રામ પંચાયત મોબાઇલ નંબર">
 
 <input type="email" id="panchayatEmail" placeholder="ગ્રામ પંચાયત ઈમેઇલ">
@@ -170,6 +240,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 <input type="text" id="websiteUrl" placeholder="વેબસાઇટ URL">
 
 <button type="submit">Save Website</button>
+
+<hr>
+<h3 style="color:red">Website Settings End</h3>
 
 </form>
 
@@ -388,37 +461,61 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 
 </section>
 
+<section id="property" class="admin-section">
+
+<section id="property" class="admin-section">
+
 <!-- Property Tax Management -->
 
-<section id="propertyTax" class="admin-section">
+<section id="property" class="admin-section">
 
 <h2>🏠 મિલકત વેરા વ્યવસ્થાપન</h2>
 
 <form id="propertyTaxForm">
 
-<input type="text" id="propertyNo" placeholder="મિલકત નંબર" required>
+<input
+type="text"
+id="propertyNo"
+placeholder="મિલકત નંબર"
+required>
 
-<input type="text" id="houseNo" placeholder="ઘર નંબર" required>
+<input
+type="text"
+id="houseNo"
+placeholder="ઘર નંબર"
+required>
 
-<input type="text" id="ownerName" placeholder="મિલકતધારકનું નામ" required>
+<input
+type="text"
+id="ownerName"
+placeholder="મિલકતધારકનું નામ"
+required>
 
-<input type="text" id="ownerMobile" placeholder="મોબાઇલ નંબર">
+<input
+type="text"
+id="ownerMobile"
+placeholder="મોબાઇલ નંબર">
 
-<input type="number" id="taxAmount" placeholder="વેરાની રકમ" required>
+<input
+type="number"
+id="taxAmount"
+placeholder="વેરાની રકમ"
+required>
 
-<input type="text" id="taxYear" value="2026-27">
+<input
+type="text"
+id="taxYear"
+value="2026-27">
 
-<input type="date" id="lastDate">
+<input
+type="text"
+id="lastDate"
+value="31-03-2027"
+placeholder="છેલ્લી તારીખ">
 
-<label>QR Code</label>
-
-<input type="file" id="taxQrFile" accept="image/*">
-
-<img id="taxQrPreview"
-width="120"
-style="margin-top:10px;border-radius:8px;display:block;">
-
-<button type="submit">
+<button
+type="submit"
+id="propertyTaxSubmitBtn">
 💾 સેવ કરો
 </button>
 
@@ -434,13 +531,37 @@ id="taxPdfFiles"
 accept=".pdf"
 multiple>
 
-<button id="importTaxPdf">
+<button
+type="button"
+id="importTaxPdf">
 📥 eGram PDF Import કરો
 </button>
 
-<div id="importProgress" style="margin-top:15px;"></div>
+<div
+id="importProgress"
+style="margin-top:15px;">
+</div>
 
-<div id="importResult" style="margin-top:10px;"></div>
+<div
+id="importResult"
+style="margin-top:10px;">
+</div>
+
+<hr>
+
+<h3>📊 Excel Import</h3>
+
+<input
+type="file"
+id="taxExcelFile"
+accept=".xlsx,.xls"
+multiple>
+
+<button
+type="button"
+id="importExcelBtn">
+📥 Excel Import કરો
+</button>
 
 <hr>
 
@@ -448,6 +569,12 @@ multiple>
 type="text"
 id="searchPropertyTax"
 placeholder="મિલકત નંબર અથવા ઘર નંબર શોધો">
+
+<h3>📋 Payment History</h3>
+
+<div id="paymentHistoryList"></div>
+
+<hr>
 
 <div id="propertyTaxList"></div>
 
@@ -457,9 +584,57 @@ placeholder="મિલકત નંબર અથવા ઘર નંબર શ�
 
 <section id="taxPayments" class="admin-section">
 
-<h2>💳 વેરા ચુકવણી</h2>
+<h2>💳 વેરા ચુકવણી Verification</h2>
 
-<div id="taxPaymentsList"></div>
+<label>From Date</label>
+
+<input
+type="date"
+id="fromDate">
+
+<label>To Date</label>
+
+<input
+type="date"
+id="toDate">
+
+<div class="payment-actions">
+
+<button id="filterPaymentsBtn">
+🔍 Filter
+</button>
+
+<button id="exportApprovedExcel">
+📄 Approved Excel Export
+</button>
+
+<button id="clearFilterBtn">
+♻️ Clear
+</button>
+
+</div>
+
+<br><br>
+
+<input
+type="text"
+id="searchTaxPayment"
+placeholder="મિલકત નંબર / UTR નંબર શોધો">
+
+<br><br>
+
+<h3>🟡 Pending Payments</h3>
+<div id="pendingPaymentsList"></div>
+
+<hr>
+
+<h3>🟢 Approved Payments</h3>
+<div id="approvedPaymentsList"></div>
+
+<hr>
+
+<h3>🔴 Rejected Payments</h3>
+<div id="rejectedPaymentsList"></div>
 
 </section>
 
@@ -480,6 +655,23 @@ placeholder="મિલકત નંબર અથવા ઘર નંબર શ�
 <i class="fa-solid fa-upload"></i>
  Restore
 </button>
+
+<div id="restoreProgress"
+style="
+display:none;
+margin-top:15px;
+padding:10px;
+background:#f5f5f5;
+border-radius:8px;
+font-weight:bold;">
+⏳ Restore શરૂ થઈ રહ્યું છે...
+</div>
+
+<input
+type="file"
+id="restoreFile"
+accept=".json"
+style="display:none;">
 
 </div>
 
@@ -568,14 +760,21 @@ Logout
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+<script src="assets/fonts/static_NotoSansGujarati-Regular-normal.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script type="module" src="admin.js?v=20260731"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <script type="module" src="property-import.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>
 </html>

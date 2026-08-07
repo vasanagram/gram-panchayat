@@ -17,8 +17,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 const btn = document.getElementById("importTaxPdf");
 
+
+
 if (btn) {
     btn.addEventListener("click", importPropertyTaxPdf);
+}
+
+const excelBtn = document.getElementById("importExcelBtn");
+
+if (excelBtn) {
+    excelBtn.addEventListener("click", importPropertyExcel);
 }
 
 async function importPropertyTaxPdf(){
@@ -316,16 +324,149 @@ background:#e8f5e9;
 border:2px solid green;
 border-radius:10px;
 ">
-
 <h2>✅ Property Tax Import Complete</h2>
-
 <p><b>Total Record :</b> ${propertyList.length}</p>
-
 <p><b>Imported :</b> ${imported}</p>
-
 <p><b>Tax Year :</b> 2026-27</p>
+</div>`;
 
-</div>
-`;
+} // page loop
 
+} // file loop
+
+} // importPropertyTaxPdf function
+
+async function importPropertyExcel() {
+
+    const files = document.getElementById("taxExcelFile").files;
+
+    if (!files.length) {
+        alert("Excel File પસંદ કરો");
+        return;
+    }
+
+    const progress = document.getElementById("importProgress");
+    const result = document.getElementById("importResult");
+
+    progress.innerHTML = "Excel વાંચી રહ્યા છીએ...";
+    result.innerHTML = "";
+
+    // જૂનો Data Delete
+    const propertySnap = await getDocs(collection(db, "propertyTax"));
+
+    let batch = writeBatch(db);
+    let count = 0;
+
+    for (const d of propertySnap.docs) {
+
+        batch.delete(d.ref);
+        count++;
+
+        if (count >= 400) {
+            await batch.commit();
+            batch = writeBatch(db);
+            count = 0;
+        }
+
+    }
+
+    if (count > 0) {
+        await batch.commit();
+    }
+
+    let imported = 0;
+    let totalRecords = 0;
+
+    batch = writeBatch(db);
+    count = 0;
+
+    for (const file of files) {
+
+        progress.innerHTML = "Reading : " + file.name;
+
+        const data = await file.arrayBuffer();
+
+        const workbook = XLSX.read(data, {
+            type: "array"
+        });
+
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+            defval: ""
+        });
+
+        totalRecords += (rows.length - 4);
+
+        for (let i = 4; i < rows.length; i++) {
+
+            const r = rows[i];
+
+            if (!r[1]) continue;
+
+            const item = {
+
+                propertyNo: String(r[1] || ""),
+                houseNo: String(r[2] || ""),
+                ownerName: String(r[3] || ""),
+                mobile: "",
+                address: String(r[0] || ""),
+                taxAmount: Number(r[5] || 0),
+                taxYear: "2026-27",
+                lastDate: "31-03-2027",
+                paid: false,
+                paidDate: "",
+                receiptNo: "",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+
+            };
+
+            batch.set(
+                doc(db, "propertyTax", item.propertyNo),
+                item
+            );
+
+            imported++;
+            count++;
+
+            if (count >= 400) {
+
+                await batch.commit();
+
+                batch = writeBatch(db);
+
+                count = 0;
+
+                progress.innerHTML =
+                    "Import : " + imported + " Record";
+
+            }
+
+        }
+
+    }
+
+    if (count > 0) {
+        await batch.commit();
+    }
+
+    progress.innerHTML = "✅ Excel Import Complete";
+
+    result.innerHTML = `
+    <div style="
+    padding:20px;
+    background:#e8f5e9;
+    border:2px solid green;
+    border-radius:10px;
+    ">
+        <h2>✅ Excel Import Complete</h2>
+
+        <p><b>Total Record :</b> ${totalRecords}</p>
+
+        <p><b>Imported :</b> ${imported}</p>
+
+        <p><b>Tax Year :</b> 2026-27</p>
+    </div>`;
 }

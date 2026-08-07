@@ -1,15 +1,18 @@
 import { db, auth, supabase } from "./firebase-config.js";
 
 import {
-collection,
-getDocs,
-getDoc,
-addDoc,
-setDoc,
-updateDoc,
-deleteDoc,
-doc,
-serverTimestamp
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  query,
+  where,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 import {
@@ -19,6 +22,7 @@ signOut
 
 const { jsPDF } = window.jspdf;
 
+let taxChart = null;
 
 /*=========================================
 LOGIN CHECK
@@ -50,7 +54,7 @@ element.innerText = snapshot.size;
 
 }
 
-async function refreshDashboard(){
+ async function refreshDashboard(){
 
   await dashboardCount("memberCount","members");
   await dashboardCount("noticeCount","notices");
@@ -77,6 +81,181 @@ async function refreshDashboard(){
   document.getElementById("approvedApplications").innerText = approved;
   document.getElementById("rejectedApplications").innerText = rejected;
 
+/*=========================================
+PROPERTY TAX DASHBOARD
+=========================================*/
+
+const taxSnapshot = await getDocs(collection(db, "taxPayments"));
+
+let totalTaxCollection = 0;
+let monthlyTaxCollection = 0;
+let yearlyTaxCollection = 0;
+
+let pendingTaxPayments = 0;
+let approvedTaxPayments = 0;
+let rejectedTaxPayments = 0;
+
+for (const item of taxSnapshot.docs) {
+
+  const payment = item.data();
+let paymentDate = null;
+
+if (payment.createdAt?.toDate) {
+
+  paymentDate = payment.createdAt.toDate();
+
+} else if (payment.createdAt?.seconds) {
+
+  paymentDate = new Date(payment.createdAt.seconds * 1000);
+
+}
+  if (payment.status === "Pending") {
+    pendingTaxPayments++;
+  }
+
+  if (payment.status === "Approved") {
+
+console.log("Approved Count Before:", approvedTaxPayments);
+
+    approvedTaxPayments++;
+    
+    console.log("Approved Count After:", approvedTaxPayments);
+    
+console.log("Approved Payment:", payment);
+    const propertySnapshot = await getDocs(
+      query(
+        collection(db, "propertyTax"),
+        where("propertyNo", "==", payment.propertyNo)
+      )
+    );
+
+console.log(
+  "Property Found:",
+  propertySnapshot.empty,
+  payment.propertyNo
+);
+
+    if (!propertySnapshot.empty) {
+
+  const tax = Number(
+    propertySnapshot.docs[0].data().taxAmount || 0
+  );
+
+  totalTaxCollection += tax;
+
+  const today = new Date();
+
+  if (paymentDate) {
+
+    if (
+      paymentDate.getMonth() === today.getMonth() &&
+      paymentDate.getFullYear() === today.getFullYear()
+    ) {
+      monthlyTaxCollection += tax;
+    }
+
+    if (
+      paymentDate.getFullYear() === today.getFullYear()
+    ) {
+      yearlyTaxCollection += tax;
+    }
+
+  }
+
+}
+
+  }
+
+  if (payment.status === "Rejected") {
+    rejectedTaxPayments++;
+  }
+
+}
+
+document.getElementById("totalTaxCollection").innerText =
+"₹ " + totalTaxCollection;
+document.getElementById("monthlyTaxCollection").innerText =
+"₹ " + monthlyTaxCollection;
+
+document.getElementById("yearlyTaxCollection").innerText =
+"₹ " + yearlyTaxCollection;
+
+document.getElementById("pendingTaxPayments").innerText =
+pendingTaxPayments;
+
+document.getElementById("approvedTaxPayments").innerText =
+approvedTaxPayments;
+
+document.getElementById("rejectedTaxPayments").innerText =
+rejectedTaxPayments;
+
+const notification =
+document.getElementById("paymentNotification");
+
+if(notification){
+
+  if(pendingTaxPayments > 0){
+
+    notification.style.display = "block";
+
+    notification.innerHTML =
+    `🔔 <b>${pendingTaxPayments}</b> નવી વેરા ચુકવણી Verification માટે બાકી છે.`;
+
+  } else {
+
+    notification.style.display = "none";
+
+  }
+
+}
+
+const ctx = document
+.getElementById("taxChart");
+
+if(ctx){
+
+if(taxChart){
+taxChart.destroy();
+}
+
+taxChart = new Chart(ctx,{
+
+type:"doughnut",
+
+data:{
+labels:[
+"Pending",
+"Approved",
+"Rejected"
+],
+
+datasets:[{
+
+data:[
+pendingTaxPayments,
+approvedTaxPayments,
+rejectedTaxPayments
+]
+
+}]
+
+},
+
+options:{
+responsive:true,
+plugins:{
+legend:{
+position:"bottom"
+}
+}
+
+}
+
+});
+
+}
+
+// 👇 refreshDashboard() અહીં બંધ કરો
 }
 
 refreshDashboard();
@@ -167,6 +346,20 @@ previewImage("memberImageFile", "memberImagePreview");
 previewImage("noticeFile", "noticePreview");
 previewImage("galleryImageFile","galleryPreview");
 
+async function clearCollection(collectionName){
+
+  const snapshot = await getDocs(collection(db, collectionName));
+
+  const batch = writeBatch(db);
+
+  snapshot.forEach((item)=>{
+    batch.delete(item.ref);
+  });
+
+  await batch.commit();
+
+}
+
 /*=========================================
 WEBSITE SETTINGS
 =========================================*/
@@ -204,6 +397,9 @@ async function loadWebsiteSettings() {
 
     if (data.stampImage)
       document.getElementById("stampPreview").src = data.stampImage;
+      
+      if (data.taxQr)
+  document.getElementById("taxQrPreview").src = data.taxQr;
 
   } catch (error) {
     console.error(error);
@@ -231,6 +427,7 @@ websiteForm?.addEventListener("submit", async (e) => {
     let sarpanchImage = oldData.sarpanchImage || "";
     let signature = oldData.sarpanchSignature || "";
     let stamp = oldData.stampImage || "";
+    let taxQr = oldData.taxQr || "";
 
     if (document.getElementById("logoFile").files.length > 0) {
       logo = await uploadToSupabase(document.getElementById("logoFile").files[0]);
@@ -252,6 +449,12 @@ websiteForm?.addEventListener("submit", async (e) => {
       stamp = await uploadToSupabase(document.getElementById("stampFile").files[0]);
     }
 
+if (document.getElementById("taxQrFile").files.length > 0) {
+  taxQr = await uploadToSupabase(
+    document.getElementById("taxQrFile").files[0]
+  );
+}
+
     await setDoc(doc(db, "website", "settings"), {
 
       websiteName: document.getElementById("websiteName").value,
@@ -265,6 +468,7 @@ websiteForm?.addEventListener("submit", async (e) => {
       sarpanchImage: sarpanchImage,
       sarpanchSignature: signature,
       stampImage: stamp,
+      taxQr: taxQr,
 
       panchayatMobile: document.getElementById("panchayatMobile").value,
       panchayatEmail: document.getElementById("panchayatEmail").value,
@@ -274,7 +478,7 @@ websiteForm?.addEventListener("submit", async (e) => {
       createdAt: serverTimestamp()
 
     });
-
+console.log("Tax QR:", taxQr);
     alert("Website Settings Saved Successfully");
 
     loadWebsiteSettings();
@@ -1245,7 +1449,7 @@ loadComplaints();
 /*=========================================
 PROPERTY TAX
 =========================================*/
-
+let editingPropertyId = null;
 previewImage("taxQrFile","taxQrPreview");
 
 const propertyTaxForm = document.getElementById("propertyTaxForm");
@@ -1257,7 +1461,23 @@ e.preventDefault();
 try{
 
 let qrUrl="";
+const propertyNo =
+document.getElementById("propertyNo").value.trim();
 
+const duplicate = await getDocs(
+  query(
+    collection(db,"propertyTax"),
+    where("propertyNo","==",propertyNo)
+  )
+);
+
+if(
+  !editingPropertyId &&
+  !duplicate.empty
+){
+  alert("❌ આ મિલકત નંબર પહેલેથી અસ્તિત્વમાં છે.");
+  return;
+}
 const qrFile=document.getElementById("taxQrFile");
 
 if(qrFile.files.length>0){
@@ -1266,41 +1486,64 @@ qrUrl=await uploadToSupabase(qrFile.files[0]);
 
 }
 
-await addDoc(collection(db,"propertyTax"),{
+const propertyData = {
 
-propertyNo:document.getElementById("propertyNo").value.trim(),
+  propertyNo: propertyNo,
 
-houseNo:document.getElementById("houseNo").value.trim(),
+  houseNo: document.getElementById("houseNo").value.trim(),
 
-ownerName:document.getElementById("ownerName").value.trim(),
+  ownerName: document.getElementById("ownerName").value.trim(),
 
-ownerMobile:document.getElementById("ownerMobile").value.trim(),
+  ownerMobile: document.getElementById("ownerMobile").value.trim(),
 
-taxAmount:Number(document.getElementById("taxAmount").value),
+  taxAmount: Number(document.getElementById("taxAmount").value),
 
-taxYear:document.getElementById("taxYear").value,
+  taxYear: document.getElementById("taxYear").value,
 
-lastDate:document.getElementById("lastDate").value,
+  lastDate: document.getElementById("lastDate").value,
 
-qr:qrUrl,
+  qr: qrUrl
 
-createdAt:serverTimestamp()
+};
 
-});
+if(editingPropertyId){
 
-alert("મિલકત વેરાની માહિતી સફળતાપૂર્વક સેવ થઈ ગઈ.");
+  await updateDoc(
+    doc(db,"propertyTax",editingPropertyId),
+    propertyData
+  );
+
+  alert("✅ મિલકતની માહિતી સફળતાપૂર્વક Update થઈ ગઈ.");
+
+  editingPropertyId = null;
+
+  document.getElementById("propertyTaxSubmitBtn").innerText =
+  "💾 સેવ કરો";
+
+}else{
+
+  propertyData.createdAt = serverTimestamp();
+
+  await addDoc(
+    collection(db,"propertyTax"),
+    propertyData
+  );
+
+  alert("✅ મિલકત વેરાની માહિતી સફળતાપૂર્વક સેવ થઈ ગઈ.");
+
+}
 
 propertyTaxForm.reset();
 
-document.getElementById("taxQrPreview").src="";
+document.getElementById("taxQrPreview").src = "";
 
 loadPropertyTax();
 
 }catch(error){
 
-console.error(error);
+  console.error(error);
 
-alert(error.message);
+  alert(error.message);
 
 }
 
@@ -1310,297 +1553,428 @@ alert(error.message);
 LOAD PROPERTY TAX
 =========================================*/
 
-async function loadPropertyTax() {
+async function loadPropertyTax(){
 
-const list = document.getElementById("propertyTaxList");
+  const snapshot = await getDocs(collection(db,"propertyTax"));
 
-if (!list) return;
+  let html = "";
 
-const snapshot = await getDocs(collection(db, "propertyTax"));
+  snapshot.forEach((docSnap)=>{
 
-let html = "";
+    const data = docSnap.data();
 
-snapshot.forEach(item => {
+    html += `
+    <div class="admin-item">
 
-const data = item.data();
+      <div>
 
-html += `
+        <h3>🏠 ${data.ownerName}</h3>
 
-<div class="admin-item">
+        <p><b>મિલકત નંબર :</b> ${data.propertyNo}</p>
 
-<div>
+        <p><b>ઘર નંબર :</b> ${data.houseNo}</p>
 
-<h3>${data.ownerName}</h3>
+        <p><b>મોબાઇલ :</b> ${data.ownerMobile}</p>
 
-<p><b>મિલકત નંબર :</b> ${data.propertyNo}</p>
+        <p><b>વેરો :</b> ₹ ${data.taxAmount}</p>
 
-<p><b>ઘર નંબર :</b> ${data.houseNo}</p>
+        <p><b>વર્ષ :</b> ${data.taxYear}</p>
 
-<p><b>વેરો :</b> ₹ ${data.taxAmount}</p>
+        <p><b>છેલ્લી તારીખ :</b> ${data.lastDate}</p>
 
-<p><b>વર્ષ :</b> ${data.taxYear}</p>
+      </div>
 
-${data.qr ? `
-<img
-  src="${data.qr}"
-  width="160"
-  style="
-    margin-top:10px;
-    border-radius:8px;
-    border:1px solid #ddd;
-    padding:4px;
-    background:#fff;
-  ">
-` : ""}
+      <div class="admin-actions">
 
-</div>
-
-<div class="admin-actions">
-
-<button class="edit-btn"
-onclick="editPropertyTax('${item.id}')">
-Edit
+        <button type="button" onclick="globalThis.editProperty('${docSnap.id}')">
+✏️ Edit
 </button>
 
-<button class="delete-btn"
-onclick="deletePropertyTax('${item.id}')">
-Delete
+<button type="button"
+onclick="globalThis.viewPaymentHistory('${data.propertyNo}')">
+📜 History
 </button>
 
-</div>
+<button type="button" class="delete-btn"
+onclick="globalThis.deleteProperty('${docSnap.id}')">
+🗑 Delete
+</button>
 
-</div>
+      </div>
 
-`;
+    </div>
+    `;
 
-});
+  });
 
-list.innerHTML = html;
-
-}
-
-loadPropertyTax();
-
-/*=========================================
-SEARCH PROPERTY TAX
-=========================================*/
-
+  document.getElementById("propertyTaxList").innerHTML = html;
 document.getElementById("searchPropertyTax")
-?.addEventListener("keyup", function(){
+?.addEventListener("keyup", function () {
 
-const value=this.value.toLowerCase();
+  const value = this.value.toLowerCase();
 
-const items=document.querySelectorAll("#propertyTaxList .admin-item");
+  document.querySelectorAll("#propertyTaxList .admin-item")
+  .forEach(item => {
 
-items.forEach(item=>{
+    item.style.display =
+      item.innerText.toLowerCase().includes(value)
+      ? "flex"
+      : "none";
 
-if(item.innerText.toLowerCase().includes(value)){
+  });
 
-item.style.display="flex";
-
-}else{
-
-item.style.display="none";
-
+});
 }
-
-});
-
-});
-
-/*=========================================
-EDIT PROPERTY TAX
-=========================================*/
-
-async function editPropertyTax(id){
-
-const ref = doc(db,"propertyTax",id);
-
-const snap = await getDoc(ref);
-
-if(!snap.exists()) return;
-
-const data = snap.data();
-
-const propertyNo = prompt("મિલકત નંબર",data.propertyNo);
-if(propertyNo===null) return;
-
-const houseNo = prompt("ઘર નંબર",data.houseNo);
-if(houseNo===null) return;
-
-const ownerName = prompt("મિલકતધારકનું નામ",data.ownerName);
-if(ownerName===null) return;
-
-const ownerMobile = prompt("મોબાઇલ નંબર",data.ownerMobile || "");
-if(ownerMobile===null) return;
-
-const taxAmount = prompt("વેરાની રકમ",data.taxAmount);
-if(taxAmount===null) return;
-
-const taxYear = prompt("વર્ષ",data.taxYear);
-if(taxYear===null) return;
-
-const lastDate = prompt("છેલ્લી તારીખ",data.lastDate || "");
-if(lastDate===null) return;
-
-await updateDoc(ref,{
-
-propertyNo,
-houseNo,
-ownerName,
-ownerMobile,
-taxAmount:Number(taxAmount),
-taxYear,
-lastDate
-
-});
-
-alert("માહિતી સફળતાપૂર્વક સુધારાઈ.");
 
 loadPropertyTax();
 
-refreshDashboard();
+async function viewPaymentHistory(propertyNo){
 
-}
+  const snapshot = await getDocs(
+    query(
+      collection(db,"taxPayments"),
+      where("propertyNo","==",propertyNo)
+    )
+  );
 
-window.editPropertyTax = editPropertyTax;
+  let html = `<h3>🏠 મિલકત નંબર : ${propertyNo}</h3>`;
 
+  if(snapshot.empty){
+    html += "<p>આ મિલકત માટે કોઈ ચુકવણી મળી નથી.</p>";
+  }else{
 
-/*=========================================
-DELETE PROPERTY TAX
-=========================================*/
+    snapshot.forEach(item=>{
 
-async function deletePropertyTax(id){
+      const data = item.data();
 
-if(!confirm("શું આ મિલકતનો રેકોર્ડ કાઢી નાખવો છે?")){
-return;
-}
+      html += `
+      <div class="admin-item">
 
-await deleteDoc(doc(db,"propertyTax",id));
+        <p><b>UTR :</b> ${data.utr || "-"}</p>
 
-alert("રેકોર્ડ સફળતાપૂર્વક કાઢી નાખવામાં આવ્યો.");
+        <p><b>Status :</b> ${data.status}</p>
 
-loadPropertyTax();
-
-refreshDashboard();
-
-}
-
-window.deletePropertyTax = deletePropertyTax;
-
-/*=========================================
-BACKUP
-=========================================*/
-
-document.getElementById("backupBtn")?.addEventListener("click", () => {
-
-alert("Backup Feature આગામી Version માં ઉમેરવામાં આવશે.");
-
-});
-
-document.getElementById("restoreBtn")?.addEventListener("click", () => {
-
-alert("Restore Feature આગામી Version માં ઉમેરવામાં આવશે.");
-
-});
-
-/*=========================================
-PROPERTY TAX PAYMENTS
-=========================================*/
-
-async function loadTaxPayments(){
-
-const list=document.getElementById("taxPaymentsList");
-
-if(!list) return;
-
-const snapshot=await getDocs(collection(db,"taxPayments"));
-
-let html="";
-
-snapshot.forEach(item=>{
-
-const data=item.data();
-
-html+=`
-
-<div class="admin-item">
-
-<div>
-
-<h3>🏠 ${data.propertyNo}</h3>
-
-<p><b>UTR :</b> ${data.utr}</p>
-
-<p><b>Status :</b> ${data.status}</p>
-
-<a href="${data.screenshot}" target="_blank">
-ચુકવણી Screenshot જુઓ
-</a>
-
-</div>
-
-<div class="admin-actions">
-
-<button onclick="approveTaxPayment('${item.id}')">
-✅ Approve
+<button
+type="button"
+onclick="globalThis.printTaxReceipt('${item.id}')">
+📄 Receipt
 </button>
 
-<button onclick="rejectTaxPayment('${item.id}')">
-❌ Reject
-</button>
+      </div>
+      `;
 
-</div>
+    });
 
-</div>
+  }
 
-`;
+  document.getElementById("paymentHistoryList").innerHTML = html;
 
-});
+}
 
-list.innerHTML=html;
+globalThis.viewPaymentHistory = viewPaymentHistory;
+
+function printTaxReceipt(id){
+
+  window.open(
+    "receipt.html?id=" + id,
+    "_blank"
+  );
+
+}
+
+globalThis.printTaxReceipt = printTaxReceipt;
+
+/*=========================================
+EDIT PROPERTY
+=========================================*/
+
+async function editProperty(id){
+
+console.log("Edit Click", id);
+
+  const snap = await getDoc(
+    doc(db,"propertyTax",id)
+  );
+
+  if(!snap.exists()) return;
+
+  const data = snap.data();
+
+  document.getElementById("propertyNo").value =
+  data.propertyNo || "";
+
+  document.getElementById("houseNo").value =
+  data.houseNo || "";
+
+  document.getElementById("ownerName").value =
+  data.ownerName || "";
+
+  document.getElementById("ownerMobile").value =
+  data.ownerMobile || "";
+
+  document.getElementById("taxAmount").value =
+  data.taxAmount || "";
+
+  document.getElementById("taxYear").value =
+  data.taxYear || "";
+
+  document.getElementById("lastDate").value =
+  data.lastDate || "";
+  
+  editingPropertyId = id;
+
+document.getElementById("propertyTaxSubmitBtn").innerText =
+"💾 Update કરો";
+
+}
+
+globalThis.editProperty = editProperty;
+
+/*=========================================
+DELETE PROPERTY
+=========================================*/
+
+async function deleteProperty(id){
+
+  const ok = confirm("આ મિલકત Delete કરવી છે?");
+
+  if(!ok) return;
+
+  await deleteDoc(doc(db,"propertyTax",id));
+
+  alert("મિલકત Delete થઈ ગઈ.");
+
+  loadPropertyTax();
+
+}
+
+globalThis.deleteProperty = deleteProperty;
+
+/*=========================================
+LOAD TAX PAYMENTS
+=========================================*/
+
+async function loadTaxPayments() {
+
+const fromDate =
+document.getElementById("fromDate")?.value;
+
+const toDate =
+document.getElementById("toDate")?.value;
+
+  const snapshot = await getDocs(collection(db, "taxPayments"));
+
+console.log(snapshot.docs.map(d => d.data()));
+
+  let pendingHtml = "";
+  let approvedHtml = "";
+  let rejectedHtml = "";
+
+  for (const item of snapshot.docs) {
+
+    const payment = item.data();
+
+let paymentDate = null;
+
+if (payment.createdAt?.toDate) {
+
+  paymentDate = payment.createdAt.toDate();
+
+} else if (payment.createdAt?.seconds) {
+
+  paymentDate = new Date(payment.createdAt.seconds * 1000);
+
+}
+
+if (paymentDate) {
+
+  if (fromDate) {
+
+    const from = new Date(fromDate);
+
+    if (paymentDate < from) {
+      continue;
+    }
+
+  }
+
+  if (toDate) {
+
+    const to = new Date(toDate);
+
+    to.setHours(23,59,59,999);
+
+    if (paymentDate > to) {
+      continue;
+    }
+
+  }
+
+}
+
+    let owner = {};
+
+    const propertySnap = await getDocs(
+      query(
+        collection(db, "propertyTax"),
+        where("propertyNo", "==", payment.propertyNo)
+      )
+    );
+
+    if (!propertySnap.empty) {
+      owner = propertySnap.docs[0].data();
+    }
+
+    const card = `
+    <div class="admin-item">
+
+      <div>
+
+        <h3>🏠 ${owner.ownerName || "-"}</h3>
+
+        <p><b>મિલકત નંબર :</b> ${payment.propertyNo}</p>
+
+        <p><b>UTR :</b> ${payment.utr}</p>
+
+        <p><b>વેરો :</b> ₹ ${owner.taxAmount || "-"}</p>
+
+        <p><b>Status :</b> ${payment.status}</p>
+
+        <img
+          src="${payment.screenshot}"
+          onclick="window.open('${payment.screenshot}','_blank')"
+          style="
+            width:120px;
+            border-radius:8px;
+            cursor:pointer;
+            margin-top:10px;
+            border:1px solid #ddd;
+          ">
+
+      </div>
+
+      <div class="admin-actions">
+
+        <button onclick="approvePayment('${item.id}')">
+          ✅ Approve
+        </button>
+
+        <button onclick="rejectPayment('${item.id}')">
+          ❌ Reject
+        </button>
+
+        <button class="delete-btn"
+          onclick="deletePayment('${item.id}')">
+          🗑 Delete
+        </button>
+
+      </div>
+
+    </div>
+    `;
+
+    if (payment.status === "Pending") {
+      pendingHtml += card;
+    } else if (payment.status === "Approved") {
+      approvedHtml += card;
+    } else if (payment.status === "Rejected") {
+      rejectedHtml += card;
+    }
+
+  }
+
+  document.getElementById("pendingPaymentsList").innerHTML = pendingHtml;
+
+  document.getElementById("approvedPaymentsList").innerHTML = approvedHtml;
+
+  document.getElementById("rejectedPaymentsList").innerHTML = rejectedHtml;
 
 }
 
 loadTaxPayments();
 
-async function approveTaxPayment(id){
 
-const receiptNo = prompt("પહોંચ નંબર દાખલ કરો");
 
-if(!receiptNo){
-  return;
-}
+/*=========================================
+APPROVE
+=========================================*/
+
+async function approvePayment(id){
 
 await updateDoc(doc(db,"taxPayments",id),{
-  status:"Receipt Ready",
-  receiptNo: receiptNo,
-  receiptDate: new Date().toLocaleDateString("en-GB")
+
+status:"Approved"
+
 });
 
-alert("પહોંચ તૈયાર થઈ ગઈ.");
+alert("ચુકવણી Approve થઈ ગઈ.");
 
 loadTaxPayments();
 
 }
 
-window.approveTaxPayment = approveTaxPayment;
+window.approvePayment = approvePayment;
 
-async function rejectTaxPayment(id){
+/*=========================================
+REJECT
+=========================================*/
 
-const ok = confirm("શું તમે આ ચુકવણીની માહિતી કાઢી નાખવા માંગો છો?");
+async function rejectPayment(id){
+
+const ok = confirm("શું તમે આ ચુકવણી Delete કરવા માંગો છો?");
 
 if(!ok) return;
 
 await deleteDoc(doc(db,"taxPayments",id));
 
-alert("ચુકવણીની માહિતી સફળતાપૂર્વક કાઢી નાખવામાં આવી.");
+alert("ચુકવણી Delete થઈ ગઈ.");
 
 loadTaxPayments();
 
 }
 
-window.rejectTaxPayment = rejectTaxPayment;
+window.rejectPayment = rejectPayment;
+
+/*=========================================
+SEARCH
+=========================================*/
+
+document.getElementById("searchTaxPayment")
+?.addEventListener("keyup",function(){
+
+const value=this.value.toLowerCase();
+
+document.querySelectorAll("#taxPaymentsList .admin-item")
+.forEach(item=>{
+
+item.style.display=
+item.innerText.toLowerCase().includes(value)
+? "flex"
+: "none";
+
+});
+
+});
+
+async function deletePayment(id){
+
+  const ok = confirm("ખરેખર આ ચુકવણી Delete કરવી છે?");
+
+  if(!ok) return;
+
+  await deleteDoc(doc(db,"taxPayments",id));
+
+  alert("ચુકવણી Delete થઈ ગઈ.");
+
+  loadTaxPayments();
+}
+
+window.deletePayment = deletePayment;
+/*=========================================
+BACKUP
+=========================================*/
+
+
 
 /*=========================================
 LOGOUT
@@ -1985,3 +2359,351 @@ reader.readAsArrayBuffer(file);
 }
 
 }
+
+document.getElementById("filterPaymentsBtn")
+?.addEventListener("click", () => {
+
+  loadTaxPayments();
+
+});
+
+document.getElementById("clearFilterBtn")
+?.addEventListener("click", () => {
+
+  document.getElementById("fromDate").value = "";
+
+  document.getElementById("toDate").value = "";
+
+  loadTaxPayments();
+
+});
+
+document.getElementById("exportApprovedExcel")
+?.addEventListener("click", async () => {
+
+  const snapshot = await getDocs(collection(db, "taxPayments"));
+
+  const rows = [];
+
+  for (const item of snapshot.docs) {
+
+    const payment = item.data();
+
+    if (payment.status !== "Approved") continue;
+
+    let owner = {};
+
+    const propertySnap = await getDocs(
+      query(
+        collection(db, "propertyTax"),
+        where("propertyNo", "==", payment.propertyNo)
+      )
+    );
+
+    if (!propertySnap.empty) {
+      owner = propertySnap.docs[0].data();
+    }
+
+    rows.push({
+      "મિલકત નંબર": payment.propertyNo,
+      "માલિક": owner.ownerName || "",
+      "ઘર નંબર": owner.houseNo || "",
+      "મોબાઇલ": owner.ownerMobile || "",
+      "વેરો": owner.taxAmount || 0,
+      "UTR": payment.utr,
+      "Status": payment.status
+    });
+
+  }
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(wb, ws, "Approved Payments");
+
+  XLSX.writeFile(wb, "Approved_Payments.xlsx");
+
+});
+
+document.getElementById("backupBtn")
+?.addEventListener("click", backupData);
+
+async function backupData(){
+
+  alert("Backup તૈયાર થઈ રહ્યું છે...");
+
+  const backup = {};
+
+  backup.website =
+    (await getDoc(doc(db,"website","settings"))).data() || {};
+
+  backup.members =
+    (await getDocs(collection(db,"members")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  backup.notices =
+    (await getDocs(collection(db,"notices")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  backup.gallery =
+    (await getDocs(collection(db,"gallery")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  backup.complaints =
+    (await getDocs(collection(db,"complaints")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  backup.propertyTax =
+    (await getDocs(collection(db,"propertyTax")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  backup.taxPayments =
+    (await getDocs(collection(db,"taxPayments")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  backup.applications =
+    (await getDocs(collection(db,"applications")))
+      .docs.map(d => ({id:d.id,...d.data()}));
+
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "GramPanchayat_Backup.json";
+
+  a.click();
+
+  URL.revokeObjectURL(url);
+
+  alert("Backup સફળતાપૂર્વક Download થઈ ગયું.");
+
+} // ✅ Function અહીં બંધ થશે
+
+document.getElementById("restoreBtn")
+?.addEventListener("click", () => {
+
+  const ok = confirm(
+    "Restore કરતા પહેલાં હાલનો તમામ ડેટા કાઢી નાખવામાં આવશે.\n\nશું તમે આગળ વધવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  document.getElementById("restoreFile").click();
+
+});
+
+document.getElementById("restoreFile")
+?.addEventListener("change", async function () {
+
+try {
+
+  if (!this.files.length) return;
+
+  const file = this.files[0];
+
+  const text = await file.text();
+
+  const backup = JSON.parse(text);
+
+const progress =
+document.getElementById("restoreProgress");
+
+progress.style.display = "block";
+progress.style.background = "#e8f5e9";
+progress.style.color = "#2e7d32";
+
+progress.innerHTML = "⏳ Backup File વાંચી રહ્યા છીએ...";
+
+progress.innerHTML =
+"🗑️ જૂનો Data કાઢી રહ્યા છીએ...";
+
+// જૂનો Data Delete કરો
+
+await clearCollection("members");
+await clearCollection("notices");
+await clearCollection("gallery");
+await clearCollection("complaints");
+await clearCollection("propertyTax");
+await clearCollection("taxPayments");
+await clearCollection("applications");
+
+progress.innerHTML =
+"📥 Backup Restore થઈ રહ્યું છે...";
+
+  alert("Backup File સફળતાપૂર્વક વાંચાઈ ગઈ.");
+
+  console.log(backup);
+
+// Website Settings Restore
+
+if (backup.website) {
+
+  await setDoc(
+    doc(db, "website", "settings"),
+    backup.website
+  );
+
+}
+
+// Members Restore
+if (backup.members) {
+
+  for (const item of backup.members) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "members", id),
+      item
+    );
+
+  }
+
+}
+
+// Notices Restore
+if (backup.notices) {
+
+  for (const item of backup.notices) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "notices", id),
+      item
+    );
+
+  }
+
+}
+
+// Gallery Restore
+if (backup.gallery) {
+
+  for (const item of backup.gallery) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "gallery", id),
+      item
+    );
+
+  }
+
+}
+
+// Complaints Restore
+if (backup.complaints) {
+
+  for (const item of backup.complaints) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "complaints", id),
+      item
+    );
+
+  }
+
+}
+
+// Property Tax Restore
+if (backup.propertyTax) {
+
+  for (const item of backup.propertyTax) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "propertyTax", id),
+      item
+    );
+
+  }
+
+}
+
+// Tax Payments Restore
+if (backup.taxPayments) {
+
+  for (const item of backup.taxPayments) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "taxPayments", id),
+      item
+    );
+
+  }
+
+}
+
+// Applications Restore
+if (backup.applications) {
+
+  for (const item of backup.applications) {
+
+    const id = item.id;
+    delete item.id;
+
+    await setDoc(
+      doc(db, "applications", id),
+      item
+    );
+
+  }
+
+}
+
+progress.innerHTML =
+"✅ Restore પૂર્ણ થયું.";
+
+setTimeout(()=>{
+
+progress.style.display = "none";
+
+},3000);
+
+alert("✅ Backup સફળતાપૂર્વક Restore થઈ ગયું.");
+
+loadWebsiteSettings();
+refreshDashboard();
+loadTaxPayments();
+
+setTimeout(() => {
+  location.reload();
+}, 1000);
+
+} catch (error) {
+
+  console.error(error);
+
+  progress.style.display = "block";
+  progress.style.background = "#ffebee";
+  progress.style.color = "#c62828";
+
+  progress.innerHTML =
+  "❌ Restore નિષ્ફળ થયું.<br><br>" +
+  error.message;
+
+  alert("Restore Failed");
+
+}
+
+});
