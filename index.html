@@ -452,7 +452,7 @@ alt="સરપંચશ્રી">
      Documents
 ========================== -->
 
-<section id="documents" class="section">
+<section id="documentsSection" class="section">
 
 <div class="container">
 
@@ -642,9 +642,443 @@ All Rights Reserved.
 
       <input type="text" id="applicantName" placeholder="તમારું નામ" required>
 
-      <input type="text" id="mobile" placeholder="મોબાઇલ નંબર" required>
+<input
+  type="text"
+  id="serviceMobile"
+  placeholder="મોબાઇલ નંબર"
+  required>
 
       <textarea id="details" placeholder="વિગત લખો"></textarea>
+
+<div id="birthFields" style="display:none;">
+
+  <h3>🟢 જન્મ પ્રમાણપત્રની વિગતો</h3>
+
+<div style="
+  margin-top:15px;
+  padding:15px;
+  background:#e8f5e9;
+  border:1px solid #4caf50;
+  border-radius:8px;
+">
+
+  <b>📄 અરજી પત્રક</b>
+
+  <p>
+    પહેલા અરજી પત્રક Download કરી ઘરે ભરીને
+    પછી અહીં Upload કરો.
+  </p>
+
+  <a
+    href="janm-maran-application.docx"
+    download
+    style="
+      display:inline-block;
+      padding:10px 15px;
+      background:#198754;
+      color:white;
+      text-decoration:none;
+      border-radius:6px;
+      font-weight:bold;
+    "
+  >
+    📥 અરજી પત્રક Download કરો
+  </a>
+
+  <br><br>
+
+  <label>
+    📎 ભરેલું અરજી પત્રક Upload કરો
+  </label>
+
+  <input
+    type="file"
+    id="birthApplicationForm"
+    accept=".doc,.docx,.pdf,.jpg,.jpeg,.png"
+  >
+
+</div>
+
+  <input
+    type="text"
+    id="birthName"
+    placeholder="બાળકનું નામ">
+
+  <select id="birthSex">
+    <option value="">જાતિ પસંદ કરો</option>
+    <option value="MALE">પુરુષ / MALE</option>
+    <option value="FEMALE">સ્ત્રી / FEMALE</option>
+  </select>
+
+  <input
+    type="text"
+    id="birthAadhaar"
+    placeholder="બાળકનો આધાર નંબર"
+    maxlength="12">
+
+  <label>જન્મ તારીખ</label>
+  <input
+    type="date"
+    id="birthDate">
+
+  <input
+    type="text"
+    id="birthPlace"
+    placeholder="જન્મ સ્થળ">
+
+  <input
+    type="text"
+    id="birthMother"
+    placeholder="માતાનું નામ">
+
+  <input
+    type="text"
+    id="birthFather"
+    placeholder="પિતાનું નામ">
+
+  <input
+    type="text"
+    id="birthMotherAadhaar"
+    placeholder="માતાનો આધાર નંબર"
+    maxlength="12">
+
+  <input
+    type="text"
+    id="birthFatherAadhaar"
+    placeholder="પિતાનો આધાર નંબર"
+    maxlength="12">
+
+<textarea
+  id="birthAddressAtBirth"
+  placeholder="જન્મ સમયે માતા-પિતાનું સરનામું"
+  required>
+</textarea>
+
+  <textarea
+  id="birthPermanentAddress"
+  placeholder="માતા-પિતાનું કાયમી સરનામું"
+  required>
+</textarea>
+
+  <input
+    type="text"
+    id="birthRegistrationNo"
+    placeholder="નોંધણી નંબર">
+
+  <label>નોંધણી તારીખ</label>
+  <input
+    type="date"
+    id="birthRegistrationDate">
+
+  <label>જૂનો જન્મ દાખલો *</label>
+
+  <input
+    type="file"
+    id="oldBirthCertificate"
+    accept=".pdf,.jpg,.jpeg,.png">
+
+  <small>
+    જૂનો જન્મ દાખલો હોય તો અવશ્ય અપલોડ કરો.
+    જન્મની નોંધ ગ્રામ પંચાયતના રેકોર્ડમાં થયેલી હોવી જરૂરી છે.
+  </small>
+
+  <div style="
+    margin-top:15px;
+    padding:15px;
+    background:#fff3cd;
+    border:1px solid #ffc107;
+    border-radius:8px;
+  ">
+
+    <b>⚠️ મહત્વપૂર્ણ સૂચના</b>
+
+    <p>
+      નવું જન્મ પ્રમાણપત્ર ગ્રામ પંચાયતના ઉપલબ્ધ જન્મ રેકોર્ડ/નોંધના આધારે જ આપવામાં આવશે.
+    </p>
+
+    <p>
+      જૂનો જન્મ દાખલો હોય તો તે અવશ્ય સાથે લાવવો.
+    </p>
+
+    <p>
+      અરજદારે જરૂરી મૂળ દસ્તાવેજો સાથે ગ્રામ પંચાયતમાં
+      <b>રૂબરૂ હાજર રહી ચકાસણી કરાવવી પડશે.</b>
+    </p>
+
+    <p>
+      દસ્તાવેજો અને જન્મ નોંધની ચકાસણી પૂર્ણ થયા બાદ જ પ્રમાણપત્ર આપવામાં આવશે.
+    </p>
+
+  </div>
+
+</div>
+
+
+<div id="deathFields" style="display:none;">
+
+  <h3>⚰️ મૃત્યુ પ્રમાણપત્રની વિગતો</h3>
+
+<div style="
+  margin-top:15px;
+  padding:15px;
+  background:#e8f5e9;
+  border:1px solid #4caf50;
+  border-radius:8px;
+">
+
+  <b>📄 અરજી પત્રક</b>
+
+  <p>
+    પહેલા અરજી પત્રક Download કરી ઘરે ભરીને
+    પછી અહીં Upload કરો.
+  </p>
+
+  <a
+    href="janm-maran-application.docx"
+    download
+    style="
+      display:inline-block;
+      padding:10px 15px;
+      background:#198754;
+      color:white;
+      text-decoration:none;
+      border-radius:6px;
+      font-weight:bold;
+    "
+  >
+    📥 અરજી પત્રક Download કરો
+  </a>
+
+  <br><br>
+
+  <label>
+    📎 ભરેલું અરજી પત્રક Upload કરો
+  </label>
+
+  <input
+    type="file"
+    id="deathApplicationForm"
+    accept=".doc,.docx,.pdf,.jpg,.jpeg,.png"
+  >
+
+</div>
+
+  <input
+    type="text"
+    id="deathName"
+    placeholder="મરનારનું નામ"
+  >
+
+  <select id="deathSex">
+    <option value="">જાતિ પસંદ કરો</option>
+    <option value="MALE">પુરુષ / MALE</option>
+    <option value="FEMALE">સ્ત્રી / FEMALE</option>
+  </select>
+
+  <input
+    type="text"
+    id="deathAadhaar"
+    placeholder="મરનારનો આધાર નંબર"
+    maxlength="12"
+  >
+
+  <input
+    type="number"
+    id="deathAge"
+    placeholder="મરનારની ઉંમર"
+  >
+
+  <label>મરણ તારીખ</label>
+  <input
+    type="date"
+    id="deathDate"
+  >
+
+  <input
+    type="text"
+    id="deathPlace"
+    placeholder="મરણ સ્થળ"
+  >
+
+  <input
+    type="text"
+    id="deathSpouse"
+    placeholder="પતિ / પત્નીનું નામ"
+  >
+
+  <input
+    type="text"
+    id="deathSpouseAadhaar"
+    placeholder="પતિ / પત્નીનો આધાર નંબર"
+    maxlength="12"
+  >
+
+  <input
+    type="text"
+    id="deathMother"
+    placeholder="માતાનું નામ"
+  >
+
+  <input
+    type="text"
+    id="deathMotherAadhaar"
+    placeholder="માતાનો આધાર નંબર"
+    maxlength="12"
+  >
+
+  <input
+    type="text"
+    id="deathFather"
+    placeholder="પિતાનું નામ"
+  >
+
+  <input
+    type="text"
+    id="deathFatherAadhaar"
+    placeholder="પિતાનો આધાર નંબર"
+    maxlength="12"
+  >
+
+  <textarea
+    id="deathAddressAtDeath"
+    placeholder="મરણ સમયે મરનારનું સરનામું"
+  ></textarea>
+
+  <textarea
+    id="deathPermanentAddress"
+    placeholder="મરનારનું કાયમી સરનામું"
+  ></textarea>
+
+  <input
+    type="text"
+    id="deathRegistrationNo"
+    placeholder="નોંધણી નંબર"
+  >
+
+  <label>નોંધણી તારીખ</label>
+  <input
+    type="date"
+    id="deathRegistrationDate"
+  >
+
+  <textarea
+    id="deathRemarks"
+    placeholder="કારણ / Remarks (જો હોય તો)"
+  ></textarea>
+
+
+  <!-- મહત્વપૂર્ણ સૂચના -->
+
+  <div style="
+    margin-top:15px;
+    padding:15px;
+    background:#fff3cd;
+    border:1px solid #ffc107;
+    border-radius:8px;
+  ">
+
+    <b>⚠️ મહત્વપૂર્ણ સૂચના</b>
+
+    <p>
+      મૃત્યુની નોંધણી માટે અરજદારે
+      <b>ગ્રામ પંચાયતમાં રૂબરૂ હાજર રહી મરણની નોંધણી કરાવવી ફરજિયાત છે.</b>
+    </p>
+
+    <p>
+      જરૂરી મૂળ દસ્તાવેજો રજૂ કર્યા બાદ અને
+      મરણની નોંધણી પૂર્ણ થયા પછી જ
+      મૃત્યુ પ્રમાણપત્ર આપવામાં આવશે.
+    </p>
+
+  </div>
+
+</div>
+
+<div id="incomeFields" style="display:none;">
+
+  <h3>💰 આવક પ્રમાણપત્રની વિગતો</h3>
+
+  <input
+    type="text"
+    id="incomeApplicantName"
+    placeholder="અરજદારનું પૂરું નામ"
+    required
+  >
+
+  <textarea
+    id="incomeAddress"
+    placeholder="અરજદારનું સંપૂર્ણ સરનામું"
+    required
+  ></textarea>
+
+  <label>📷 પાસપોર્ટ સાઇઝ ફોટો *</label>
+  <input
+    type="file"
+    id="incomePhoto"
+    accept=".jpg,.jpeg,.png"
+    required
+  >
+
+  <label>🪪 આધાર કાર્ડ *</label>
+  <input
+    type="file"
+    id="incomeAadhaar"
+    accept=".pdf,.jpg,.jpeg,.png"
+    required
+  >
+
+  <label>📄 રેશન કાર્ડ *</label>
+  <input
+    type="file"
+    id="incomeRationCard"
+    accept=".pdf,.jpg,.jpeg,.png"
+    required
+  >
+
+  <label>💡 લાઈટ બિલ *</label>
+  <input
+    type="file"
+    id="incomeLightBill"
+    accept=".pdf,.jpg,.jpeg,.png"
+    required
+  >
+
+  <label>📑 ભરેલું આવકનું ફોર્મ *</label>
+  <input
+    type="file"
+    id="incomeForm"
+    accept=".pdf,.jpg,.jpeg,.png"
+    required
+  >
+
+  <div style="
+    margin-top:15px;
+    padding:15px;
+    background:#fff3cd;
+    border:1px solid #ffc107;
+    border-radius:8px;
+  ">
+
+    <b>⚠️ મહત્વપૂર્ણ સૂચના</b>
+
+    <p>
+      આવકનું પ્રમાણપત્ર મેળવવા માટે ભરેલું આવકનું ફોર્મ
+      જરૂરી દસ્તાવેજો સાથે ગ્રામ પંચાયતમાં જમા કરાવવું રહેશે.
+    </p>
+
+    <p>
+      ગ્રામ પંચાયતમાં ફોર્મ જમા કર્યા બાદ જરૂરી
+      <b>સહી અને સિક્કા તલાટીશ્રી પાસે કરાવવાના રહેશે.</b>
+    </p>
+
+    <p>
+      જરૂરી પ્રક્રિયા પૂર્ણ થયા બાદ જ
+      <b>આવકનું પ્રમાણપત્ર આપવામાં આવશે.</b>
+    </p>
+
+  </div>
+
+</div>
 
       <input type="file" id="documents" accept=".jpg,.jpeg,.png,.pdf" multiple>
 
@@ -659,6 +1093,7 @@ All Rights Reserved.
   </div>
 
 </div>
+
 
 <!-- અરજી સ્ટેટસ Popup -->
 <div id="statusPopup" class="popup" style="display:none;">

@@ -67,9 +67,9 @@ src="${settings.logo || ''}">
 
 <div class="title">
 
-<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:15px;">
 
-<div>
+<div style="flex:1;">
 
 <h2>${settings.websiteName || "વાસણા ચૌધરી ગ્રામ પંચાયત"}</h2>
 
@@ -79,7 +79,7 @@ src="${settings.logo || ''}">
 
 </div>
 
-<div style="text-align:right;font-size:14px;">
+<div style="width:110px;text-align:right;font-size:12px;padding-right:8px;flex-shrink:0;">
 
 <b>Receipt Type</b><br>
 
@@ -90,8 +90,8 @@ Property Tax
 <b>Date</b><br>
 
 ${
-payment.createdAt?.toDate
-? payment.createdAt.toDate().toLocaleDateString("en-GB")
+payment.createdAt?.seconds
+? new Date(payment.createdAt.seconds * 1000).toLocaleDateString("en-GB")
 : "-"
 }
 
@@ -171,14 +171,9 @@ text-align:right;
 
 </div>
 
-`;
-
-receipt.innerHTML += `
-
 <br>
 
 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-
 
 <div>
 
@@ -205,8 +200,8 @@ ${payment.status}
 <p>
 ચુકવણી તારીખ :
 ${
-payment.createdAt?.toDate
-? payment.createdAt.toDate().toLocaleDateString("en-GB")
+payment.createdAt?.seconds
+? new Date(payment.createdAt.seconds * 1000).toLocaleDateString("en-GB")
 : "-"
 }
 

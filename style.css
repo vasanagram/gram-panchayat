@@ -1422,6 +1422,10 @@ padding:20px;
 border-radius:12px;
 position:relative;
 box-shadow:0 5px 20px rgba(0,0,0,.3);
+
+max-height:90vh;
+overflow-y:auto;
+box-sizing:border-box;
 }
 
 .popup-content h2{

@@ -2707,3 +2707,1509 @@ setTimeout(() => {
 }
 
 });
+
+/*=========================================
+  BIRTH CERTIFICATE APPLICATIONS
+=========================================*/
+
+async function loadBirthApplications() {
+
+  const list =
+    document.getElementById("birthApplicationsList");
+
+  if (!list) return;
+
+  list.innerHTML = "⏳ અરજીઓ લોડ થઈ રહી છે...";
+
+  try {
+
+    const snapshot =
+      await getDocs(collection(db, "applications"));
+
+    let html = "";
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      if (data.service !== "birth") return;
+
+      const birth = data.birthData || {};
+
+      const status = data.status || "Pending";
+
+      html += `
+
+      <div class="admin-item"
+        style="
+          display:block;
+          padding:20px;
+          margin-bottom:15px;
+          border:1px solid #ddd;
+          border-radius:10px;
+          background:#fff;
+        ">
+
+        <h3>🟢 જન્મ પ્રમાણપત્ર અરજી</h3>
+
+        <p>
+          <b>અરજી નંબર:</b>
+          ${data.applicationNo || "-"}
+        </p>
+
+        <p>
+          <b>અરજદારનું નામ:</b>
+          ${data.name || "-"}
+        </p>
+
+        <p>
+          <b>મોબાઇલ:</b>
+          ${data.mobile || "-"}
+        </p>
+
+        <hr>
+
+        <h4>👶 જન્મની માહિતી</h4>
+
+        <p><b>બાળકનું નામ:</b> ${birth.birthName || "-"}</p>
+
+        <p><b>જાતિ:</b> ${birth.birthSex || "-"}</p>
+
+        <p><b>આધાર:</b> ${birth.birthAadhaar || "-"}</p>
+
+        <p><b>જન્મ તારીખ:</b> ${birth.birthDate || "-"}</p>
+
+        <p><b>જન્મ સ્થળ:</b> ${birth.birthPlace || "-"}</p>
+
+        <p><b>માતાનું નામ:</b> ${birth.birthMother || "-"}</p>
+
+        <p><b>પિતાનું નામ:</b> ${birth.birthFather || "-"}</p>
+
+        <p><b>માતાનો આધાર:</b> ${birth.birthMotherAadhaar || "-"}</p>
+
+        <p><b>પિતાનો આધાર:</b> ${birth.birthFatherAadhaar || "-"}</p>
+
+        <p>
+          <b>જન્મ સમયે સરનામું:</b>
+          ${birth.birthAddressAtBirth || "-"}
+        </p>
+
+        <p>
+          <b>કાયમી સરનામું:</b>
+          ${birth.birthPermanentAddress || "-"}
+        </p>
+
+        <p>
+          <b>નોંધણી નંબર:</b>
+          ${birth.birthRegistrationNo || "-"}
+        </p>
+
+        <p>
+          <b>નોંધણી તારીખ:</b>
+          ${birth.birthRegistrationDate || "-"}
+        </p>
+
+        <hr>
+
+        <h4>📎 Documents</h4>
+
+${
+  data.applicationForm?.url
+  ?
+  `
+  <p>
+    <a
+      href="${data.applicationForm.url}"
+      target="_blank"
+      style="
+        display:inline-block;
+        padding:10px 15px;
+        background:#198754;
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-weight:bold;
+      "
+    >
+      📄 ભરેલું અરજી પત્રક જુઓ
+    </a>
+  </p>
+  `
+  :
+  `
+  <p>❌ ભરેલું અરજી પત્રક મળ્યું નથી.</p>
+  `
+}
+
+        ${
+          birth.oldBirthCertificate?.url
+          ?
+          `<p>
+            <a
+              href="${birth.oldBirthCertificate.url}"
+              target="_blank"
+              style="color:#1565c0;font-weight:bold;">
+              📄 જૂનો જન્મ દાખલો જુઓ
+            </a>
+          </p>`
+          :
+          `<p>❌ જૂનો જન્મ દાખલો મળ્યો નથી.</p>`
+        }
+
+        ${
+          data.documents?.length
+          ?
+          data.documents.map(file => `
+            <p>
+              <a
+                href="${file.url}"
+                target="_blank"
+                style="color:#1565c0;">
+                📎 ${file.name}
+              </a>
+            </p>
+          `).join("")
+          :
+          `<p>કોઈ અન્ય Document નથી.</p>`
+        }
+
+        <hr>
+
+        <p>
+          <b>સ્થિતિ:</b>
+          <span style="
+            background:#fff3cd;
+            padding:5px 10px;
+            border-radius:5px;">
+            ${status}
+          </span>
+        </p>
+
+        <div style="
+          display:flex;
+          gap:10px;
+          flex-wrap:wrap;
+          margin-top:15px;
+        ">
+
+<button
+  onclick="viewBirthApplication('${docSnap.id}')"
+  style="
+    background:#6f42c1;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:6px;
+    cursor:pointer;">
+  👁️ વિગતો જુઓ
+</button>
+
+          <button
+            onclick="approveBirthApplication('${docSnap.id}')"
+            style="
+              background:#198754;
+              color:white;
+              border:none;
+              padding:10px 16px;
+              border-radius:6px;
+              cursor:pointer;">
+            ✅ Approve
+          </button>
+
+          <button
+            onclick="rejectBirthApplication('${docSnap.id}')"
+            style="
+              background:#dc3545;
+              color:white;
+              border:none;
+              padding:10px 16px;
+              border-radius:6px;
+              cursor:pointer;">
+            ❌ Reject
+          </button>
+
+<button
+  onclick="editBirthApplication('${docSnap.id}')"
+  style="
+    background:#0d6efd;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:6px;
+    cursor:pointer;">
+  ✏️ Edit
+</button>
+
+          <button
+            onclick="deleteBirthApplication('${docSnap.id}')"
+            style="
+              background:#6c757d;
+              color:white;
+              border:none;
+              padding:10px 16px;
+              border-radius:6px;
+              cursor:pointer;">
+            🗑️ Delete
+          </button>
+
+        </div>
+
+      </div>
+
+      `;
+
+    });
+
+    if (!html) {
+
+      html =
+        "<p>📭 હાલમાં કોઈ જન્મ પ્રમાણપત્રની અરજી નથી.</p>";
+
+    }
+
+    list.innerHTML = html;
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "❌ અરજી લોડ કરવામાં ભૂલ આવી: " +
+      error.message;
+
+  }
+
+}
+
+loadBirthApplications();
+
+document
+  .getElementById("searchBirthApplications")
+  ?.addEventListener("keyup", function () {
+
+    const value = this.value.toLowerCase().trim();
+
+    document
+      .querySelectorAll("#birthApplicationsList .admin-item")
+      .forEach(item => {
+
+        const text = item.innerText.toLowerCase();
+
+        item.style.display =
+          text.includes(value)
+          ? "block"
+          : "none";
+
+      });
+
+  });
+
+/*=========================================
+  APPROVE BIRTH APPLICATION
+=========================================*/
+
+async function approveBirthApplication(id) {
+
+  const ok = confirm(
+    "શું તમે આ જન્મ પ્રમાણપત્રની અરજી Approve કરવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Approved"
+      }
+    );
+
+    alert("✅ જન્મ પ્રમાણપત્રની અરજી Approved થઈ ગઈ.");
+
+    loadBirthApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Approve કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.approveBirthApplication = approveBirthApplication;
+
+
+/*=========================================
+  REJECT BIRTH APPLICATION
+=========================================*/
+
+async function rejectBirthApplication(id) {
+
+  const reason = prompt(
+    "Reject કરવાનું કારણ લખો:"
+  );
+
+  if (reason === null) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Rejected",
+        rejectionReason: reason
+      }
+    );
+
+    alert("❌ જન્મ પ્રમાણપત્રની અરજી Reject થઈ ગઈ.");
+
+    loadBirthApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Reject કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.rejectBirthApplication = rejectBirthApplication;
+
+
+/*=========================================
+  DELETE BIRTH APPLICATION
+=========================================*/
+
+async function deleteBirthApplication(id) {
+
+  const ok = confirm(
+    "⚠️ શું તમે આ અરજી કાયમ માટે Delete કરવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "applications", id)
+    );
+
+    alert("🗑️ અરજી Delete થઈ ગઈ.");
+
+    loadBirthApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteBirthApplication = deleteBirthApplication;
+
+/*=========================================
+  VIEW BIRTH APPLICATION DETAILS
+=========================================*/
+
+async function viewBirthApplication(id) {
+
+  try {
+
+    const snap = await getDoc(
+      doc(db, "applications", id)
+    );
+
+    if (!snap.exists()) {
+      alert("અરજી મળી નથી.");
+      return;
+    }
+
+    const data = snap.data();
+    const birth = data.birthData || {};
+
+    alert(
+`જન્મ પ્રમાણપત્ર અરજી
+
+અરજી નંબર: ${data.applicationNo || "-"}
+
+અરજદારનું નામ: ${data.name || "-"}
+
+મોબાઇલ: ${data.mobile || "-"}
+
+બાળકનું નામ: ${birth.birthName || "-"}
+
+જાતિ: ${birth.birthSex || "-"}
+
+આધાર: ${birth.birthAadhaar || "-"}
+
+જન્મ તારીખ: ${birth.birthDate || "-"}
+
+જન્મ સ્થળ: ${birth.birthPlace || "-"}
+
+માતાનું નામ: ${birth.birthMother || "-"}
+
+પિતાનું નામ: ${birth.birthFather || "-"}
+
+માતાનો આધાર: ${birth.birthMotherAadhaar || "-"}
+
+પિતાનો આધાર: ${birth.birthFatherAadhaar || "-"}
+
+જન્મ સમયે સરનામું:
+${birth.birthAddressAtBirth || "-"}
+
+કાયમી સરનામું:
+${birth.birthPermanentAddress || "-"}
+
+નોંધણી નંબર:
+${birth.birthRegistrationNo || "-"}
+
+નોંધણી તારીખ:
+${birth.birthRegistrationDate || "-"}
+
+સ્થિતિ:
+${data.status || "Pending"}`
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "વિગતો બતાવવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.viewBirthApplication =
+  viewBirthApplication;
+
+/*=========================================
+  EDIT BIRTH APPLICATION
+=========================================*/
+
+async function editBirthApplication(id) {
+
+  try {
+
+    const snap = await getDoc(
+      doc(db, "applications", id)
+    );
+
+    if (!snap.exists()) {
+      alert("અરજી મળી નથી.");
+      return;
+    }
+
+    const data = snap.data();
+    const birth = data.birthData || {};
+
+    const birthName = prompt(
+      "બાળકનું નામ:",
+      birth.birthName || ""
+    );
+    if (birthName === null) return;
+
+    const birthSex = prompt(
+      "જાતિ (MALE/FEMALE):",
+      birth.birthSex || ""
+    );
+    if (birthSex === null) return;
+
+    const birthAadhaar = prompt(
+      "બાળકનો આધાર નંબર:",
+      birth.birthAadhaar || ""
+    );
+    if (birthAadhaar === null) return;
+
+    const birthDate = prompt(
+      "જન્મ તારીખ:",
+      birth.birthDate || ""
+    );
+    if (birthDate === null) return;
+
+    const birthPlace = prompt(
+      "જન્મ સ્થળ:",
+      birth.birthPlace || ""
+    );
+    if (birthPlace === null) return;
+
+    const birthMother = prompt(
+      "માતાનું નામ:",
+      birth.birthMother || ""
+    );
+    if (birthMother === null) return;
+
+    const birthFather = prompt(
+      "પિતાનું નામ:",
+      birth.birthFather || ""
+    );
+    if (birthFather === null) return;
+
+    const birthMotherAadhaar = prompt(
+      "માતાનો આધાર નંબર:",
+      birth.birthMotherAadhaar || ""
+    );
+    if (birthMotherAadhaar === null) return;
+
+    const birthFatherAadhaar = prompt(
+      "પિતાનો આધાર નંબર:",
+      birth.birthFatherAadhaar || ""
+    );
+    if (birthFatherAadhaar === null) return;
+
+    const birthAddressAtBirth = prompt(
+      "જન્મ સમયે માતા-પિતાનું સરનામું:",
+      birth.birthAddressAtBirth || ""
+    );
+    if (birthAddressAtBirth === null) return;
+
+    const birthPermanentAddress = prompt(
+      "માતા-પિતાનું કાયમી સરનામું:",
+      birth.birthPermanentAddress || ""
+    );
+    if (birthPermanentAddress === null) return;
+
+    const birthRegistrationNo = prompt(
+      "નોંધણી નંબર:",
+      birth.birthRegistrationNo || ""
+    );
+    if (birthRegistrationNo === null) return;
+
+    const birthRegistrationDate = prompt(
+      "નોંધણી તારીખ:",
+      birth.birthRegistrationDate || ""
+    );
+    if (birthRegistrationDate === null) return;
+
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+
+        "birthData.birthName":
+          birthName.trim(),
+
+        "birthData.birthSex":
+          birthSex.trim(),
+
+        "birthData.birthAadhaar":
+          birthAadhaar.trim(),
+
+        "birthData.birthDate":
+          birthDate.trim(),
+
+        "birthData.birthPlace":
+          birthPlace.trim(),
+
+        "birthData.birthMother":
+          birthMother.trim(),
+
+        "birthData.birthFather":
+          birthFather.trim(),
+
+        "birthData.birthMotherAadhaar":
+          birthMotherAadhaar.trim(),
+
+        "birthData.birthFatherAadhaar":
+          birthFatherAadhaar.trim(),
+
+        "birthData.birthAddressAtBirth":
+          birthAddressAtBirth.trim(),
+
+        "birthData.birthPermanentAddress":
+          birthPermanentAddress.trim(),
+
+        "birthData.birthRegistrationNo":
+          birthRegistrationNo.trim(),
+
+        "birthData.birthRegistrationDate":
+          birthRegistrationDate.trim()
+
+      }
+    );
+
+    alert(
+      "✅ જન્મ પ્રમાણપત્રની બધી માહિતી Update થઈ ગઈ."
+    );
+
+    loadBirthApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Edit કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.editBirthApplication =
+  editBirthApplication;
+  
+/*=========================================
+  DEATH CERTIFICATE APPLICATIONS
+=========================================*/
+
+async function loadDeathApplications() {
+
+  const list =
+    document.getElementById("deathApplicationsList");
+
+  if (!list) return;
+
+  list.innerHTML =
+    "⏳ મૃત્યુ પ્રમાણપત્રની અરજીઓ લોડ થઈ રહી છે...";
+
+  try {
+
+    const snapshot =
+      await getDocs(collection(db, "applications"));
+
+    let html = "";
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      if (data.service !== "death") return;
+
+      const death = data.deathData || {};
+
+      html += `
+
+      <div class="admin-item"
+        style="
+          display:block;
+          padding:20px;
+          margin-bottom:15px;
+          border:1px solid #ddd;
+          border-radius:10px;
+          background:#fff;
+        ">
+
+        <h3>⚰️ મૃત્યુ પ્રમાણપત્ર અરજી</h3>
+
+        <p>
+          <b>અરજી નંબર:</b>
+          ${data.applicationNo || "-"}
+        </p>
+
+        <p>
+          <b>અરજદારનું નામ:</b>
+          ${data.name || "-"}
+        </p>
+
+        <p>
+          <b>મોબાઇલ:</b>
+          ${data.mobile || "-"}
+        </p>
+
+        <hr>
+
+        <h4>⚰️ મૃત્યુની માહિતી</h4>
+
+        <p>
+          <b>મરનારનું નામ:</b>
+          ${death.deathName || "-"}
+        </p>
+
+        <p>
+          <b>જાતિ:</b>
+          ${death.deathSex || "-"}
+        </p>
+
+        <p>
+          <b>આધાર:</b>
+          ${death.deathAadhaar || "-"}
+        </p>
+
+        <p>
+          <b>ઉંમર:</b>
+          ${death.deathAge || "-"}
+        </p>
+
+        <p>
+          <b>મરણ તારીખ:</b>
+          ${death.deathDate || "-"}
+        </p>
+
+        <p>
+          <b>મરણ સ્થળ:</b>
+          ${death.deathPlace || "-"}
+        </p>
+
+        <p>
+          <b>પતિ / પત્નીનું નામ:</b>
+          ${death.deathSpouse || "-"}
+        </p>
+
+        <p>
+          <b>પતિ / પત્નીનો આધાર:</b>
+          ${death.deathSpouseAadhaar || "-"}
+        </p>
+
+        <p>
+          <b>માતાનું નામ:</b>
+          ${death.deathMother || "-"}
+        </p>
+
+        <p>
+          <b>માતાનો આધાર:</b>
+          ${death.deathMotherAadhaar || "-"}
+        </p>
+
+        <p>
+          <b>પિતાનું નામ:</b>
+          ${death.deathFather || "-"}
+        </p>
+
+        <p>
+          <b>પિતાનો આધાર:</b>
+          ${death.deathFatherAadhaar || "-"}
+        </p>
+
+        <p>
+          <b>મરણ સમયે સરનામું:</b>
+          ${death.deathAddressAtDeath || "-"}
+        </p>
+
+        <p>
+          <b>કાયમી સરનામું:</b>
+          ${death.deathPermanentAddress || "-"}
+        </p>
+
+        <p>
+          <b>નોંધણી નંબર:</b>
+          ${death.deathRegistrationNo || "-"}
+        </p>
+
+        <p>
+          <b>નોંધણી તારીખ:</b>
+          ${death.deathRegistrationDate || "-"}
+        </p>
+
+        <p>
+          <b>કારણ / Remarks:</b>
+          ${death.deathRemarks || "-"}
+        </p>
+
+        <hr>
+
+        <h4>📎 Documents</h4>
+
+${
+  data.applicationForm?.url
+  ?
+  `
+  <p>
+    <a
+      href="${data.applicationForm.url}"
+      target="_blank"
+      style="
+        display:inline-block;
+        padding:10px 15px;
+        background:#198754;
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-weight:bold;
+      "
+    >
+      📄 ભરેલું અરજી પત્રક જુઓ
+    </a>
+  </p>
+  `
+  :
+  `
+  <p>❌ ભરેલું અરજી પત્રક મળ્યું નથી.</p>
+  `
+}
+
+        ${
+          data.documents?.length
+          ?
+          data.documents.map(file => `
+
+            <p>
+              <a
+                href="${file.url}"
+                target="_blank"
+                style="
+                  color:#1565c0;
+                  font-weight:bold;
+                "
+              >
+                📄 ${file.name}
+              </a>
+            </p>
+
+          `).join("")
+
+          :
+
+          `<p>❌ કોઈ Document મળ્યું નથી.</p>`
+        }
+
+        <hr>
+
+        <p>
+          <b>સ્થિતિ:</b>
+
+          <span style="
+            background:#fff3cd;
+            padding:5px 10px;
+            border-radius:5px;
+          ">
+            ${data.status || "Pending"}
+          </span>
+        </p>
+
+        <div style="margin-top:15px;">
+
+          <button
+            onclick="approveDeathApplication('${docSnap.id}')"
+            style="
+              background:#198754;
+              color:white;
+              border:0;
+              padding:10px 15px;
+              border-radius:6px;
+              margin-right:5px;
+            "
+          >
+            ✅ Approve
+          </button>
+
+          <button
+            onclick="rejectDeathApplication('${docSnap.id}')"
+            style="
+              background:#dc3545;
+              color:white;
+              border:0;
+              padding:10px 15px;
+              border-radius:6px;
+              margin-right:5px;
+            "
+          >
+            ❌ Reject
+          </button>
+
+          <button
+            onclick="deleteDeathApplication('${docSnap.id}')"
+            style="
+              background:#6c757d;
+              color:white;
+              border:0;
+              padding:10px 15px;
+              border-radius:6px;
+            "
+          >
+            🗑️ Delete
+          </button>
+
+        </div>
+
+      </div>
+
+      `;
+
+    });
+
+    if (!html) {
+
+      html =
+        "<p>📭 હાલમાં કોઈ મૃત્યુ પ્રમાણપત્રની અરજી નથી.</p>";
+
+    }
+
+    list.innerHTML = html;
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "❌ અરજી લોડ કરવામાં ભૂલ આવી: " +
+      error.message;
+
+  }
+}
+
+
+/*=========================================
+  APPROVE DEATH APPLICATION
+=========================================*/
+
+async function approveDeathApplication(id) {
+
+  if (!confirm(
+    "શું તમે આ મૃત્યુ પ્રમાણપત્ર અરજી Approve કરવા માંગો છો?"
+  )) {
+    return;
+  }
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Approved"
+      }
+    );
+
+    alert(
+      "✅ મૃત્યુ પ્રમાણપત્રની અરજી Approved થઈ ગઈ."
+    );
+
+    await loadDeathApplications();
+
+    refreshDashboard();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Approve કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+}
+
+window.approveDeathApplication =
+  approveDeathApplication;
+
+
+/*=========================================
+  REJECT DEATH APPLICATION
+=========================================*/
+
+async function rejectDeathApplication(id) {
+
+  const reason = prompt(
+    "Reject કરવાનું કારણ લખો:"
+  );
+
+  if (reason === null) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Rejected",
+        rejectionReason: reason
+      }
+    );
+
+    alert(
+      "❌ મૃત્યુ પ્રમાણપત્રની અરજી Reject થઈ ગઈ."
+    );
+
+    await loadDeathApplications();
+
+    refreshDashboard();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Reject કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+}
+
+window.rejectDeathApplication =
+  rejectDeathApplication;
+
+
+/*=========================================
+  DELETE DEATH APPLICATION
+=========================================*/
+
+async function deleteDeathApplication(id) {
+
+  const ok = confirm(
+    "⚠️ શું તમે આ મૃત્યુ પ્રમાણપત્રની અરજી કાયમ માટે Delete કરવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    console.log(
+      "Deleting Death Application ID:",
+      id
+    );
+
+    await deleteDoc(
+      doc(db, "applications", id)
+    );
+
+    alert(
+      "🗑️ મૃત્યુ પ્રમાણપત્રની અરજી Delete થઈ ગઈ."
+    );
+
+    await loadDeathApplications();
+
+    refreshDashboard();
+
+  } catch (error) {
+
+    console.error(
+      "Death Delete Error:",
+      error
+    );
+
+    alert(
+      "❌ Delete કરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+
+  }
+}
+
+window.deleteDeathApplication =
+  deleteDeathApplication;
+
+
+/*=========================================
+  LOAD DEATH APPLICATIONS
+=========================================*/
+
+loadDeathApplications();
+
+/*=========================================
+  INCOME CERTIFICATE APPLICATIONS
+=========================================*/
+
+async function loadIncomeApplications() {
+
+  const list =
+    document.getElementById("incomeApplicationsList");
+
+  if (!list) return;
+
+  list.innerHTML =
+    "⏳ આવક પ્રમાણપત્રની અરજીઓ લોડ થઈ રહી છે...";
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "applications")
+      );
+
+    let html = "";
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      if (data.service !== "income") return;
+
+      const income =
+        data.incomeData || {};
+
+      html += `
+
+        <div class="admin-item"
+          style="
+            display:block;
+            padding:20px;
+            margin-bottom:15px;
+            border:1px solid #ddd;
+            border-radius:10px;
+            background:#fff;
+          ">
+
+          <h3>💰 આવક પ્રમાણપત્ર અરજી</h3>
+
+          <p>
+            <b>અરજી નંબર:</b>
+            ${data.applicationNo || "-"}
+          </p>
+
+          <p>
+            <b>અરજદારનું નામ:</b>
+            ${income.incomeApplicantName || data.name || "-"}
+          </p>
+
+          <p>
+            <b>મોબાઈલ:</b>
+            ${data.mobile || "-"}
+          </p>
+
+          <p>
+            <b>સરનામું:</b>
+            ${income.incomeAddress || "-"}
+          </p>
+
+          <p>
+            <b>સ્થિતિ:</b>
+            ${
+              data.status === "Approved"
+                ? "🟢 મંજૂર"
+                : data.status === "Rejected"
+                ? "🔴 નામંજૂર"
+                : "🟡 તપાસ હેઠળ"
+            }
+          </p>
+
+          <hr>
+
+<h4>📎 જરૂરી દસ્તાવેજો</h4>
+
+${
+  income.incomePhoto?.url
+  ? `<p>
+      📷 પાસપોર્ટ ફોટો:
+      <a href="${income.incomePhoto.url}" target="_blank">
+        📂 જુઓ
+      </a>
+    </p>`
+  : `<p>📷 પાસપોર્ટ ફોટો ઉપલબ્ધ નથી</p>`
+}
+
+${
+  income.incomeAadhaar?.url
+  ? `<p>
+      🪪 આધાર કાર્ડ:
+      <a href="${income.incomeAadhaar.url}" target="_blank">
+        📂 જુઓ
+      </a>
+    </p>`
+  : `<p>🪪 આધાર કાર્ડ ઉપલબ્ધ નથી</p>`
+}
+
+${
+  income.incomeRationCard?.url
+  ? `<p>
+      📄 રેશન કાર્ડ:
+      <a href="${income.incomeRationCard.url}" target="_blank">
+        📂 જુઓ
+      </a>
+    </p>`
+  : `<p>📄 રેશન કાર્ડ ઉપલબ્ધ નથી</p>`
+}
+
+${
+  income.incomeLightBill?.url
+  ? `<p>
+      💡 લાઈટ બિલ:
+      <a href="${income.incomeLightBill.url}" target="_blank">
+        📂 જુઓ
+      </a>
+    </p>`
+  : `<p>💡 લાઈટ બિલ ઉપલબ્ધ નથી</p>`
+}
+
+${
+  income.incomeForm?.url
+  ? `<p>
+      📑 ભરેલું આવકનું ફોર્મ:
+      <a href="${income.incomeForm.url}" target="_blank">
+        📂 જુઓ
+      </a>
+    </p>`
+  : `<p>📑 આવકનું ફોર્મ ઉપલબ્ધ નથી</p>`
+}
+
+<div style="margin-top:15px;">
+
+<button
+  onclick="viewIncomeApplication('${docSnap.id}')">
+  👁️ View
+</button>
+
+            <button
+              onclick="approveIncomeApplication('${docSnap.id}')">
+              ✅ Approve
+            </button>
+
+            <button
+              onclick="rejectIncomeApplication('${docSnap.id}')">
+              ❌ Reject
+            </button>
+
+            <button
+              onclick="deleteIncomeApplication('${docSnap.id}')">
+              🗑️ Delete
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
+    list.innerHTML =
+      html ||
+      "હાલ કોઈ આવક પ્રમાણપત્રની અરજી નથી.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "❌ અરજીઓ લોડ કરવામાં ભૂલ આવી: " +
+      error.message;
+
+  }
+
+}
+
+loadIncomeApplications();
+
+/*=========================================
+  SEARCH INCOME APPLICATIONS
+=========================================*/
+
+const incomeSearch =
+  document.getElementById("searchIncomeApplications");
+
+incomeSearch?.addEventListener("input", () => {
+
+  const searchText =
+    incomeSearch.value.trim().toLowerCase();
+
+  const items =
+    document.querySelectorAll(
+      "#incomeApplicationsList .admin-item"
+    );
+
+  items.forEach(item => {
+
+    const text =
+      item.innerText.toLowerCase();
+
+    item.style.display =
+      text.includes(searchText)
+        ? "block"
+        : "none";
+
+  });
+
+});
+
+/*=========================================
+  APPROVE INCOME APPLICATION
+=========================================*/
+
+async function approveIncomeApplication(id) {
+
+  const ok = confirm(
+    "શું તમે આ આવક પ્રમાણપત્રની અરજી Approve કરવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Approved"
+      }
+    );
+
+    alert(
+      "✅ આવક પ્રમાણપત્રની અરજી Approved થઈ ગઈ."
+    );
+
+    loadIncomeApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Approve કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.approveIncomeApplication =
+  approveIncomeApplication;
+
+
+/*=========================================
+  REJECT INCOME APPLICATION
+=========================================*/
+
+async function rejectIncomeApplication(id) {
+
+  const reason = prompt(
+    "Reject કરવાનું કારણ લખો:"
+  );
+
+  if (reason === null) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Rejected",
+        rejectionReason: reason
+      }
+    );
+
+    alert(
+      "❌ આવક પ્રમાણપત્રની અરજી Reject થઈ ગઈ."
+    );
+
+    loadIncomeApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Reject કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.rejectIncomeApplication =
+  rejectIncomeApplication;
+
+
+/*=========================================
+  DELETE INCOME APPLICATION
+=========================================*/
+
+async function deleteIncomeApplication(id) {
+
+  const ok = confirm(
+    "⚠️ શું તમે આ આવક પ્રમાણપત્રની અરજી કાયમ માટે Delete કરવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "applications", id)
+    );
+
+    alert(
+      "🗑️ આવક પ્રમાણપત્રની અરજી Delete થઈ ગઈ."
+    );
+
+    loadIncomeApplications();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteIncomeApplication =
+  deleteIncomeApplication;
+  
+  /*=========================================
+  VIEW INCOME APPLICATION
+=========================================*/
+
+async function viewIncomeApplication(id) {
+
+  try {
+
+    const snap =
+      await getDoc(
+        doc(db, "applications", id)
+      );
+
+    if (!snap.exists()) {
+
+      alert("અરજી મળી નથી.");
+
+      return;
+    }
+
+    const data = snap.data();
+
+    const income =
+      data.incomeData || {};
+
+    alert(
+`💰 આવક પ્રમાણપત્ર અરજી
+
+અરજી નંબર:
+${data.applicationNo || "-"}
+
+અરજદારનું નામ:
+${income.incomeApplicantName || data.name || "-"}
+
+મોબાઈલ:
+${data.mobile || "-"}
+
+સરનામું:
+${income.incomeAddress || "-"}
+
+સ્થિતિ:
+${data.status || "Pending"}
+
+Reject કારણ:
+${data.rejectionReason || "-"}`
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "View કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.viewIncomeApplication =
+  viewIncomeApplication;

@@ -570,7 +570,8 @@ e.preventDefault();
 
 const name=document.getElementById("name").value.trim();
 
-const mobile=document.getElementById("mobile").value.trim();
+const mobile =
+  document.getElementById("serviceMobile").value.trim();
 
 const message=document.getElementById("message").value.trim();
 
@@ -754,6 +755,50 @@ status:"અરજીનું સ્ટેટસ"
 
 document.getElementById("popupTitle").innerText = titles[type];
 
+const birthFields =
+  document.getElementById("birthFields");
+
+if (birthFields) {
+
+  birthFields.style.display =
+    type === "birth" ? "block" : "none";
+
+  birthFields.querySelectorAll("input, select, textarea").forEach(el => {
+    el.disabled = type !== "birth";
+  });
+
+}
+
+const deathFields =
+  document.getElementById("deathFields");
+
+if (deathFields) {
+
+  deathFields.style.display =
+    type === "death" ? "block" : "none";
+
+  deathFields.querySelectorAll("input, select, textarea").forEach(el => {
+    el.disabled = type !== "death";
+  });
+
+}
+
+const incomeFields =
+  document.getElementById("incomeFields");
+
+if (incomeFields) {
+
+  incomeFields.style.display =
+    type === "income" ? "block" : "none";
+
+  incomeFields.querySelectorAll(
+    "input, select, textarea"
+  ).forEach(el => {
+    el.disabled = type !== "income";
+  });
+
+}
+
 document.getElementById("servicePopup").style.display="flex";
 
 }
@@ -772,118 +817,591 @@ window.closePopup=closePopup;
 const serviceForm = document.getElementById("serviceForm");
 
 serviceForm?.addEventListener("submit", async (e) => {
+
   e.preventDefault();
 
   try {
 
-    const files = document.getElementById("documents").files;
-    let documentUrls = [];
+    const applicantName =
+      document.getElementById("applicantName").value.trim();
 
-    if (files && files.length > 0) {
+    const mobile =
+  document.getElementById("serviceMobile").value.trim();
 
-      for (let i = 0; i < files.length; i++) {
+    const details =
+      document.getElementById("details").value.trim();
 
-        const file = files[i];
 
-        const url = await uploadToSupabase(file);
+    /*=========================================
+      OTHER DOCUMENTS
+    =========================================*/
 
-documentUrls.push({
-  name: file.name,
-  url: url
-});
+let documentUrls = [];
 
-      }
+const fileInput =
+  document.getElementById("documents");
 
-    }
+/*=========================================
+  APPLICATION FORM UPLOAD
+=========================================*/
+
+let applicationForm = null;
+
+let applicationFormId = null;
+
+if (selectedService === "birth") {
+
+  applicationFormId = "birthApplicationForm";
+
+}
+
+if (selectedService === "death") {
+
+  applicationFormId = "deathApplicationForm";
+
+}
+
+if (applicationFormId) {
+
+  const applicationFormFile =
+    document.getElementById(applicationFormId)?.files[0];
+
+  if (!applicationFormFile) {
+
+    alert(
+      "⚠️ ભરેલું અરજી પત્રક Upload કરવું જરૂરી છે."
+    );
+
+    return;
+
+  }
+
+  const applicationFormUrl =
+    await uploadToSupabase(applicationFormFile);
+
+  applicationForm = {
+
+    name: applicationFormFile.name,
+
+    url: applicationFormUrl
+
+  };
+
+}
+
+const files =
+  fileInput ? fileInput.files : [];
+
+if (files && files.length > 0) {
+
+  for (let i = 0; i < files.length; i++) {
+
+    const file = files[i];
+
+    const url =
+      await uploadToSupabase(file);
+
+    documentUrls.push({
+      name: file.name,
+      url: url
+    });
+
+  }
+
+}
+
+
+    /*=========================================
+      APPLICATION NUMBER
+    =========================================*/
 
     const applicationNo = "GP-" + Date.now();
 
-    await addDoc(collection(db, "applications"), {
 
-      service: selectedService,
-      name: document.getElementById("applicantName").value,
-      mobile: document.getElementById("mobile").value,
-      details: document.getElementById("details").value,
-      documents: documentUrls,
-      applicationNo: applicationNo,
-      status: "Pending",
-      createdAt: serverTimestamp()
+/*=========================================
+  INCOME CERTIFICATE DATA
+=========================================*/
 
-    });
+let incomeData = null;
+
+if (selectedService === "income") {
+
+  const incomePhoto =
+    document.getElementById("incomePhoto").files[0];
+
+  const incomeAadhaar =
+    document.getElementById("incomeAadhaar").files[0];
+
+  const incomeRationCard =
+    document.getElementById("incomeRationCard").files[0];
+
+  const incomeLightBill =
+    document.getElementById("incomeLightBill").files[0];
+
+  const incomeForm =
+    document.getElementById("incomeForm").files[0];
+
+
+  if (
+    !incomePhoto ||
+    !incomeAadhaar ||
+    !incomeRationCard ||
+    !incomeLightBill ||
+    !incomeForm
+  ) {
 
     alert(
-      "તમારી અરજી સફળતાપૂર્વક મોકલવામાં આવી.\n\nઅરજી નંબર: " + applicationNo
+      "⚠️ આવક દાખલા માટે બધા જરૂરી દસ્તાવેજો Upload કરો."
     );
 
+    return;
+  }
+
+
+  /* Upload Documents */
+
+  const incomePhotoUrl =
+    await uploadToSupabase(incomePhoto);
+
+  const incomeAadhaarUrl =
+    await uploadToSupabase(incomeAadhaar);
+
+  const incomeRationCardUrl =
+    await uploadToSupabase(incomeRationCard);
+
+  const incomeLightBillUrl =
+    await uploadToSupabase(incomeLightBill);
+
+  const incomeFormUrl =
+    await uploadToSupabase(incomeForm);
+
+
+  incomeData = {
+
+    incomeApplicantName:
+      document
+        .getElementById("incomeApplicantName")
+        .value.trim(),
+
+    incomeAddress:
+      document
+        .getElementById("incomeAddress")
+        .value.trim(),
+
+    incomePhoto: {
+      name: incomePhoto.name,
+      url: incomePhotoUrl
+    },
+
+    incomeAadhaar: {
+      name: incomeAadhaar.name,
+      url: incomeAadhaarUrl
+    },
+
+    incomeRationCard: {
+      name: incomeRationCard.name,
+      url: incomeRationCardUrl
+    },
+
+    incomeLightBill: {
+      name: incomeLightBill.name,
+      url: incomeLightBillUrl
+    },
+
+    incomeForm: {
+      name: incomeForm.name,
+      url: incomeFormUrl
+    }
+
+  };
+
+}
+
+    /*=========================================
+      BIRTH CERTIFICATE DATA
+    =========================================*/
+
+    let birthData = null;
+
+    if (selectedService === "birth") {
+
+      const oldBirthFile =
+        document.getElementById("oldBirthCertificate").files[0];
+
+      if (!oldBirthFile) {
+
+        alert("⚠️ જૂનો જન્મ દાખલો અપલોડ કરવો જરૂરી છે.");
+
+        return;
+
+      }
+
+      const oldBirthUrl =
+        await uploadToSupabase(oldBirthFile);
+
+
+      birthData = {
+
+        birthName:
+          document.getElementById("birthName").value.trim(),
+
+        birthSex:
+          document.getElementById("birthSex").value,
+
+        birthAadhaar:
+          document.getElementById("birthAadhaar").value.trim(),
+
+        birthDate:
+          document.getElementById("birthDate").value,
+
+        birthPlace:
+          document.getElementById("birthPlace").value.trim(),
+
+        birthMother:
+          document.getElementById("birthMother").value.trim(),
+
+        birthFather:
+          document.getElementById("birthFather").value.trim(),
+
+        birthMotherAadhaar:
+          document.getElementById("birthMotherAadhaar").value.trim(),
+
+        birthFatherAadhaar:
+          document.getElementById("birthFatherAadhaar").value.trim(),
+
+        birthAddressAtBirth:
+          document.getElementById("birthAddressAtBirth").value.trim(),
+
+        birthPermanentAddress:
+          document.getElementById("birthPermanentAddress").value.trim(),
+
+        birthRegistrationNo:
+          document.getElementById("birthRegistrationNo").value.trim(),
+
+        birthRegistrationDate:
+          document.getElementById("birthRegistrationDate").value,
+
+        oldBirthCertificate: {
+
+          name: oldBirthFile.name,
+
+          url: oldBirthUrl
+
+        }
+
+      };
+
+    }
+
+
+    /*=========================================
+      DEATH CERTIFICATE DATA
+    =========================================*/
+
+    let deathData = null;
+
+    if (selectedService === "death") {
+
+      deathData = {
+
+        deathName:
+          document.getElementById("deathName").value.trim(),
+
+        deathSex:
+          document.getElementById("deathSex").value,
+
+        deathAadhaar:
+          document.getElementById("deathAadhaar").value.trim(),
+
+        deathAge:
+          document.getElementById("deathAge").value.trim(),
+
+        deathDate:
+          document.getElementById("deathDate").value,
+
+        deathPlace:
+          document.getElementById("deathPlace").value.trim(),
+
+        deathSpouse:
+          document.getElementById("deathSpouse").value.trim(),
+
+        deathSpouseAadhaar:
+          document.getElementById("deathSpouseAadhaar").value.trim(),
+
+        deathMother:
+          document.getElementById("deathMother").value.trim(),
+
+        deathMotherAadhaar:
+          document.getElementById("deathMotherAadhaar").value.trim(),
+
+        deathFather:
+          document.getElementById("deathFather").value.trim(),
+
+        deathFatherAadhaar:
+          document.getElementById("deathFatherAadhaar").value.trim(),
+
+        deathAddressAtDeath:
+          document.getElementById("deathAddressAtDeath").value.trim(),
+
+        deathPermanentAddress:
+          document.getElementById("deathPermanentAddress").value.trim(),
+
+        deathRegistrationNo:
+          document.getElementById("deathRegistrationNo").value.trim(),
+
+        deathRegistrationDate:
+          document.getElementById("deathRegistrationDate").value,
+
+        deathRemarks:
+          document.getElementById("deathRemarks").value.trim()
+
+      };
+
+    }
+
+
+    /*=========================================
+      FIRESTORE SAVE
+    =========================================*/
+
+    await addDoc(
+      collection(db, "applications"),
+      {
+
+        service: selectedService,
+
+        name: applicantName,
+
+        mobile: mobile,
+
+        details: details,
+
+        documents: documentUrls,
+
+applicationForm: applicationForm,
+
+        birthData: birthData,
+
+        deathData: deathData,
+
+incomeData: incomeData,
+
+        applicationNo: applicationNo,
+
+        status: "Pending",
+
+        createdAt: serverTimestamp()
+
+      }
+    );
+
+
+    /*=========================================
+      SUCCESS
+    =========================================*/
+
+    alert(
+      "✅ તમારી અરજી સફળતાપૂર્વક મોકલવામાં આવી.\n\n" +
+      "અરજી નંબર: " +
+      applicationNo
+    );
+
+
     serviceForm.reset();
+
+
+    const birthFields =
+      document.getElementById("birthFields");
+
+    if (birthFields) {
+
+      birthFields.style.display = "none";
+
+    }
+
+
+    const deathFields =
+      document.getElementById("deathFields");
+
+    if (deathFields) {
+
+      deathFields.style.display = "none";
+
+    }
+
+
     closePopup();
+
 
   } catch (error) {
 
     console.error(error);
-    alert("અરજી મોકલવામાં ભૂલ આવી: " + error.message);
+
+    alert(
+      "અરજી મોકલવામાં ભૂલ આવી: " +
+      error.message
+    );
 
   }
 
 });
 
-const searchBtn = document.getElementById("searchApplicationBtn");
+const searchBtn =
+  document.getElementById("searchApplicationBtn");
 
 searchBtn?.addEventListener("click", async () => {
 
-  const applicationNo = document
-    .getElementById("applicationSearch")
-    .value
-    .trim();
+  const applicationNo =
+    document
+      .getElementById("applicationSearch")
+      .value
+      .trim();
 
-  const result = document.getElementById("applicationResult");
+  const result =
+    document.getElementById("applicationResult");
 
   if (!applicationNo) {
-    result.innerHTML = "કૃપા કરીને અરજી નંબર દાખલ કરો.";
+
+    result.innerHTML =
+      "⚠️ કૃપા કરીને અરજી નંબર દાખલ કરો.";
+
     return;
+
   }
 
-  const q = query(
-    collection(db, "applications"),
-    where("applicationNo", "==", applicationNo)
-  );
+  result.innerHTML =
+    "⏳ અરજી શોધી રહ્યા છીએ...";
 
-  const snapshot = await getDocs(q);
+  try {
 
-  if (snapshot.empty) {
-    result.innerHTML = "❌ અરજી નંબર મળ્યો નથી.";
-    return;
+    const snapshot =
+      await getDocs(
+        collection(db, "applications")
+      );
+
+    let found = false;
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      if (
+        data.applicationNo === applicationNo
+      ) {
+
+        found = true;
+
+        let status = data.status || "Pending";
+
+        let statusColor = "#fff3cd";
+
+        if (status === "Approved") {
+          statusColor = "#d1e7dd";
+        }
+
+        if (status === "Rejected") {
+          statusColor = "#f8d7da";
+        }
+
+        result.innerHTML = `
+
+          <div style="
+            margin-top:15px;
+            padding:15px;
+            border-radius:8px;
+            background:${statusColor};
+          ">
+
+            <h3>
+              📄 અરજીની માહિતી
+            </h3>
+
+            <p>
+              <b>અરજી નંબર:</b>
+              ${data.applicationNo || "-"}
+            </p>
+
+            <p>
+              <b>અરજદારનું નામ:</b>
+              ${data.name || "-"}
+            </p>
+
+            <p>
+  <b>સેવા:</b>
+  ${
+    {
+      birth: "જન્મ પ્રમાણપત્ર",
+      death: "મૃત્યુ પ્રમાણપત્ર",
+      income: "આવક દાખલો",
+      residence: "રહેઠાણ દાખલો",
+      property: "મિલકત આકારણી",
+      tax: "ટેક્સ",
+      complaint: "ફરિયાદ"
+    }[data.service] || data.service || "-"
   }
+</p>
 
-  snapshot.forEach((doc) => {
+<p>
+  <b>સ્થિતિ:</b>
+  ${
+    status === "Approved"
+      ? "🟢 મંજૂર"
+      : status === "Rejected"
+      ? "🔴 નામંજૂર"
+      : "🟡 તપાસ હેઠળ"
+  }
+</p>
 
-    const data = doc.data();
-const serviceNames = {
-  birth: "જન્મ પ્રમાણપત્ર",
-  death: "મૃત્યુ પ્રમાણપત્ર",
-  income: "આવક દાખલો",
-  residence: "રહેઠાણ દાખલો",
-  property: "મિલકત આકારણી",
-  tax: "ટેક્સ",
-  complaint: "ફરિયાદ"
-};
-    result.innerHTML = `
-      <h3>અરજી મળી ગઈ</h3>
-      <p><b>નામ:</b> ${data.name}</p>
-<p><b>સેવા:</b> ${serviceNames[data.service] || data.service}</p>
-      <p><b>સ્ટેટસ:</b> ${data.status}</p>
-    `;
+            ${
+              status === "Rejected"
+              ?
+              `
+              <p>
+                <b>❌ Reject કારણ:</b>
+                ${data.rejectionReason || "-"}
+              </p>
+              `
+              :
+              ""
+            }
 
-  });
+          </div>
+
+        `;
+
+      }
+
+    });
+
+    if (!found) {
+
+      result.innerHTML =
+        "❌ આ અરજી નંબરની અરજી મળી નથી.";
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    result.innerHTML =
+      "❌ અરજી શોધવામાં ભૂલ આવી: " +
+      error.message;
+
+  }
 
 });
 
 function openStatusPopup() {
+
   document.getElementById("statusPopup").style.display = "flex";
+
 }
 
 function closeStatusPopup() {
+
   document.getElementById("statusPopup").style.display = "none";
+
 }
 
 window.openStatusPopup = openStatusPopup;
