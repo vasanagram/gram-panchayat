@@ -1677,12 +1677,10 @@ async function viewApplication(id) {
 
 
             <button
-              id="applicationViewClose"
-         <button
-              id="applicationViewClose"
-            >
-              ✖
-            </button>
+  id="applicationViewClose"
+>
+  ✖
+</button>
 
           </div>
 
@@ -2096,4 +2094,4 @@ window.applicationPrint =
 
 console.log(
   "✅ Professional Application Print System Loaded"
-);
+);"applicationViewClose"
