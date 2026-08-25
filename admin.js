@@ -1,5 +1,5 @@
 console.log("🔥 MY ADMIN.JS IS RUNNING");
-import { db, auth, supabase } from "./firebase-config.js";
+import { db, auth, storage } from "./firebase-config.js";
 
 import {
   collection,
@@ -16,6 +16,11 @@ import {
   writeBatch
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-storage.js";
 import {
 onAuthStateChanged,
 signOut
@@ -111,7 +116,7 @@ element.innerText = snapshot.size;
 
   const snapshot = await getDocs(collection(db,"applications"));
 
-  document.getElementById("totalApplications").innerText = snapshot.size;
+document.getElementById("totalApplications").innerText = snapshot.size;
 
   let pending = 0;
   let approved = 0;
@@ -126,8 +131,8 @@ element.innerText = snapshot.size;
   });
 
   document.getElementById("pendingApplications").innerText = pending;
-  document.getElementById("approvedApplications").innerText = approved;
-  document.getElementById("rejectedApplications").innerText = rejected;
+document.getElementById("approvedApplications").innerText = approved;
+document.getElementById("rejectedApplications").innerText = rejected;
 
 /*=========================================
 PROPERTY TAX DASHBOARD
@@ -221,24 +226,25 @@ console.log(
 }
 
 document.getElementById("totalTaxCollection").innerText =
-"₹ " + totalTaxCollection;
+  "₹ " + totalTaxCollection;
+
 document.getElementById("monthlyTaxCollection").innerText =
-"₹ " + monthlyTaxCollection;
+  "₹ " + monthlyTaxCollection;
 
 document.getElementById("yearlyTaxCollection").innerText =
-"₹ " + yearlyTaxCollection;
+  "₹ " + yearlyTaxCollection;
 
 document.getElementById("pendingTaxPayments").innerText =
-pendingTaxPayments;
+  pendingTaxPayments;
 
 document.getElementById("approvedTaxPayments").innerText =
-approvedTaxPayments;
+  approvedTaxPayments;
 
 document.getElementById("rejectedTaxPayments").innerText =
-rejectedTaxPayments;
+  rejectedTaxPayments;
 
 const notification =
-document.getElementById("paymentNotification");
+  document.getElementById("paymentNotification");
 
 if(notification){
 
@@ -308,16 +314,14 @@ position:"bottom"
 
 refreshDashboard();
 
-const CLOUD_NAME = "f62hvppq";
-const UPLOAD_PRESET = "gram_upload_auto";
-
 async function uploadToSupabase(file) {
 
-  alert(file.type);
-  alert(file.name);
-  alert(file.size);
+  if (!file) {
+    throw new Error("કોઈ File પસંદ કરવામાં આવી નથી.");
+  }
 
-  const extension = file.name.split(".").pop().toLowerCase();
+  const extension =
+    file.name.split(".").pop().toLowerCase();
 
   const fileName =
     Date.now() +
@@ -326,42 +330,48 @@ async function uploadToSupabase(file) {
     "." +
     extension;
 
-  // File ને Blob માં ફેરવો
-  const arrayBuffer = await file.arrayBuffer();
+  const storageRef =
+    ref(storage, "uploads/" + fileName);
 
-  const blob = new Blob([arrayBuffer], {
-    type: file.type || "application/pdf"
-  });
+  try {
 
-  alert("Uploading...");
+    alert("📤 File Upload થઈ રહી છે...");
 
-  const { data, error } = await supabase.storage
-    .from("uploads")
-    .upload(fileName, blob, {
-      cacheControl: "3600",
-      upsert: true,
-      contentType: file.type || "application/pdf"
-    });
-
-  console.log(data);
-  console.log(error);
-
-  if (error) {
-    alert(
-      "Message: " + error.message +
-      "\nStatus: " + error.status +
-      "\nStatusCode: " + error.statusCode +
-      "\nName: " + error.name
+    await uploadBytes(
+      storageRef,
+      file,
+      {
+        contentType:
+          file.type || "application/octet-stream"
+      }
     );
+
+    const downloadURL =
+      await getDownloadURL(storageRef);
+
+    console.log(
+      "✅ Firebase Storage Upload Success:",
+      downloadURL
+    );
+
+    return downloadURL;
+
+  } catch (error) {
+
+    console.error(
+      "❌ Firebase Storage Upload Error:",
+      error
+    );
+
+    alert(
+      "❌ File Upload કરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+
     throw error;
   }
-
-  const { data: publicUrlData } = supabase.storage
-    .from("uploads")
-    .getPublicUrl(fileName);
-
-  return publicUrlData.publicUrl;
 }
+
 window.uploadToSupabase = uploadToSupabase;
 function previewImage(inputId, previewId) {
 
@@ -420,41 +430,62 @@ async function loadWebsiteSettings() {
 
     const data = docSnap.data();
 
-    document.getElementById("websiteName").value = data.websiteName || "";
-    document.getElementById("bannerTitle").value = data.bannerTitle || "";
-    document.getElementById("bannerSubtitle").value = data.bannerSubtitle || "";
-    document.getElementById("sarpanchName").value = data.sarpanchName || "";
-    document.getElementById("sarpanchMessage").value = data.sarpanchMessage || "";
+document.getElementById("websiteName").value =
+  data.websiteName || "";
 
-    document.getElementById("panchayatMobile").value = data.panchayatMobile || "";
-    document.getElementById("panchayatEmail").value = data.panchayatEmail || "";
-    document.getElementById("panchayatAddress").value = data.panchayatAddress || "";
-    document.getElementById("websiteUrl").value = data.websiteUrl || "";
+document.getElementById("bannerTitle").value =
+  data.bannerTitle || "";
 
-    if (data.logo)
-      document.getElementById("logoPreview").src = data.logo;
+document.getElementById("bannerSubtitle").value =
+  data.bannerSubtitle || "";
 
-    if (data.banner)
-      document.getElementById("bannerPreview").src = data.banner;
+document.getElementById("sarpanchName").value =
+  data.sarpanchName || "";
 
-    if (data.sarpanchImage)
-      document.getElementById("sarpanchPreview").src = data.sarpanchImage;
+document.getElementById("sarpanchMessage").value =
+  data.sarpanchMessage || "";
 
-    if (data.sarpanchSignature)
-      document.getElementById("signaturePreview").src = data.sarpanchSignature;
+document.getElementById("panchayatMobile").value =
+  data.panchayatMobile || "";
 
-    if (data.stampImage)
-      document.getElementById("stampPreview").src = data.stampImage;
-      
-      if (data.taxQr)
-  document.getElementById("taxQrPreview").src = data.taxQr;
+document.getElementById("panchayatEmail").value =
+  data.panchayatEmail || "";
+
+document.getElementById("panchayatAddress").value =
+  data.panchayatAddress || "";
+
+document.getElementById("websiteUrl").value =
+  data.websiteUrl || "";
+
+if (data.logo)
+  document.getElementById("logoPreview").src = data.logo;
+
+if (data.banner)
+  document.getElementById("bannerPreview").src = data.banner;
+
+if (data.sarpanchImage)
+  document.getElementById("sarpanchPreview").src =
+    data.sarpanchImage;
+
+if (data.sarpanchSignature)
+  document.getElementById("signaturePreview").src =
+    data.sarpanchSignature;
+
+if (data.stampImage)
+  document.getElementById("stampPreview").src =
+    data.stampImage;
+
+if (data.taxQr)
+  document.getElementById("taxQrPreview").src =
+    data.taxQr;
 
   } catch (error) {
     console.error(error);
   }
 }
 
-const websiteForm = document.getElementById("websiteForm");
+const websiteForm =
+  document.getElementById("websiteForm");
 
 websiteForm?.addEventListener("submit", async (e) => {
 
@@ -478,24 +509,34 @@ websiteForm?.addEventListener("submit", async (e) => {
     let taxQr = oldData.taxQr || "";
 
     if (document.getElementById("logoFile").files.length > 0) {
-      logo = await uploadToSupabase(document.getElementById("logoFile").files[0]);
+  logo = await uploadToSupabase(
+    document.getElementById("logoFile").files[0]
+  );
     }
 
     if (document.getElementById("bannerFile").files.length > 0) {
-      banner = await uploadToSupabase(document.getElementById("bannerFile").files[0]);
-    }
+  banner = await uploadToSupabase(
+    document.getElementById("bannerFile").files[0]
+  );
+}
 
-    if (document.getElementById("sarpanchImageFile").files.length > 0) {
-      sarpanchImage = await uploadToSupabase(document.getElementById("sarpanchImageFile").files[0]);
-    }
+if (document.getElementById("sarpanchImageFile").files.length > 0) {
+  sarpanchImage = await uploadToSupabase(
+    document.getElementById("sarpanchImageFile").files[0]
+  );
+}
 
-    if (document.getElementById("signatureFile").files.length > 0) {
-      signature = await uploadToSupabase(document.getElementById("signatureFile").files[0]);
-    }
+if (document.getElementById("signatureFile").files.length > 0) {
+  signature = await uploadToSupabase(
+    document.getElementById("signatureFile").files[0]
+  );
+}
 
-    if (document.getElementById("stampFile").files.length > 0) {
-      stamp = await uploadToSupabase(document.getElementById("stampFile").files[0]);
-    }
+if (document.getElementById("stampFile").files.length > 0) {
+  stamp = await uploadToSupabase(
+    document.getElementById("stampFile").files[0]
+  );
+}
 
 if (document.getElementById("taxQrFile").files.length > 0) {
   taxQr = await uploadToSupabase(
@@ -505,11 +546,20 @@ if (document.getElementById("taxQrFile").files.length > 0) {
 
     await setDoc(doc(db, "website", "settings"), {
 
-      websiteName: document.getElementById("websiteName").value,
-      bannerTitle: document.getElementById("bannerTitle").value,
-      bannerSubtitle: document.getElementById("bannerSubtitle").value,
-      sarpanchName: document.getElementById("sarpanchName").value,
-      sarpanchMessage: document.getElementById("sarpanchMessage").value,
+      websiteName:
+  document.getElementById("websiteName").value,
+
+bannerTitle:
+  document.getElementById("bannerTitle").value,
+
+bannerSubtitle:
+  document.getElementById("bannerSubtitle").value,
+
+sarpanchName:
+  document.getElementById("sarpanchName").value,
+
+sarpanchMessage:
+  document.getElementById("sarpanchMessage").value,
 
       logo: logo,
       banner: banner,
@@ -518,10 +568,17 @@ if (document.getElementById("taxQrFile").files.length > 0) {
       stampImage: stamp,
       taxQr: taxQr,
 
-      panchayatMobile: document.getElementById("panchayatMobile").value,
-      panchayatEmail: document.getElementById("panchayatEmail").value,
-      panchayatAddress: document.getElementById("panchayatAddress").value,
-      websiteUrl: document.getElementById("websiteUrl").value,
+      panchayatMobile:
+  document.getElementById("panchayatMobile").value,
+
+panchayatEmail:
+  document.getElementById("panchayatEmail").value,
+
+panchayatAddress:
+  document.getElementById("panchayatAddress").value,
+
+websiteUrl:
+  document.getElementById("websiteUrl").value,
 
       createdAt: serverTimestamp()
 
@@ -545,7 +602,7 @@ loadWebsiteSettings();
 =========================================*/
 
 const villageInfoForm =
-  document.getElementById("villageInfoForm");
+    document.getElementById("villageInfoForm");
 
 
 async function loadVillageInfoAdmin() {
@@ -562,19 +619,19 @@ async function loadVillageInfoAdmin() {
     const data = snap.data();
 
     document.getElementById("villagePopulation").value =
-      data.population || "";
+    data.population || "";
 
     document.getElementById("villageHouses").value =
-      data.houses || "";
+    data.houses || "";
 
     document.getElementById("villageSchool").value =
-      data.school || "";
+    data.school || "";
 
     document.getElementById("villageTemple").value =
-      data.temple || "";
+    data.temple || "";
 
     document.getElementById("villageHistory").value =
-      data.history || "";
+    data.history || "";
 
   } catch (error) {
 
@@ -702,7 +759,7 @@ window.deleteVillageInfo =
 MEMBERS
 =========================================*/
 
-const memberForm=document.getElementById("memberForm");
+const memberForm = document.getElementById("memberForm");
 
 memberForm?.addEventListener("submit",async(e)=>{
 
@@ -739,7 +796,7 @@ refreshDashboard();
 
 async function loadMembers(){
 
-const list=document.getElementById("memberList");
+const list = document.getElementById("memberList");
 
 if(!list) return;
 
@@ -842,7 +899,8 @@ window.editMember = editMember;
 NOTICE
 =========================================*/
 
-const noticeForm = document.getElementById("noticeForm");
+const noticeForm =
+  document.getElementById("noticeForm");
 
 noticeForm?.addEventListener("submit", async (e) => {
 
@@ -850,7 +908,8 @@ e.preventDefault();
 
 let noticeFile = "";
 
-const fileInput = document.getElementById("noticeFile");
+const fileInput =
+  document.getElementById("noticeFile");
 
 if (fileInput.files.length > 0) {
   noticeFile = await uploadToSupabase(fileInput.files[0]);
@@ -858,11 +917,14 @@ if (fileInput.files.length > 0) {
 
 await addDoc(collection(db, "notices"), {
 
-  title: document.getElementById("noticeTitle").value,
+  title:
+  document.getElementById("noticeTitle").value,
 
-  description: document.getElementById("noticeDescription").value,
+  description:
+  document.getElementById("noticeDescription").value,
 
-  date: document.getElementById("noticeDate").value,
+  date:
+  document.getElementById("noticeDate").value,
 
   file: noticeFile,
 
@@ -880,7 +942,8 @@ refreshDashboard();
 
 async function loadNotices(){
 
-const list=document.getElementById("noticeList");
+const list =
+  document.getElementById("noticeList");
 
 if(!list) return;
 
@@ -1002,16 +1065,16 @@ galleryForm?.addEventListener("submit", async (e) => {
   try {
 
     const album =
-      document.getElementById("galleryAlbum")?.value.trim() || "";
+  document.getElementById("galleryAlbum")?.value.trim() || "";
 
     const eventName =
-      document.getElementById("galleryEventName")?.value.trim() || "";
+  document.getElementById("galleryEventName")?.value.trim() || "";
 
     const eventDate =
-      document.getElementById("galleryDate")?.value || "";
+  document.getElementById("galleryDate")?.value || "";
 
     const fileInput =
-      document.getElementById("galleryImageFile");
+  document.getElementById("galleryImageFile");
 
     /* ------------------------------------
        VALIDATION
@@ -1109,7 +1172,7 @@ galleryForm?.addEventListener("submit", async (e) => {
 
 
     const preview =
-      document.getElementById("galleryPreview");
+  document.getElementById("galleryPreview");
 
     if (preview) {
       preview.src = "";
@@ -1145,7 +1208,7 @@ galleryForm?.addEventListener("submit", async (e) => {
 async function loadGallery() {
 
   const list =
-    document.getElementById("galleryList");
+  document.getElementById("galleryList");
 
   if (!list) return;
 
@@ -1473,10 +1536,10 @@ videoForm?.addEventListener("submit", async (e) => {
       collection(db, "videos"),
       {
         title:
-          document.getElementById("videoTitle").value.trim(),
+  document.getElementById("videoTitle").value.trim(),
 
         url:
-          document.getElementById("videoUrl").value.trim(),
+  document.getElementById("videoUrl").value.trim(),
 
         createdAt:
           serverTimestamp()
@@ -1510,7 +1573,7 @@ videoForm?.addEventListener("submit", async (e) => {
 async function loadVideos() {
 
   const list =
-    document.getElementById("videoList");
+  document.getElementById("videoList");
 
   if (!list) return;
 
@@ -1692,7 +1755,8 @@ loadVideos();
 GRAM SABHA
 =========================================*/
 
-const gramsabhaForm = document.getElementById("gramsabhaForm");
+const gramsabhaForm =
+  document.getElementById("gramsabhaForm");
 
 gramsabhaForm?.addEventListener("submit", async (e) => {
 
@@ -1700,15 +1764,20 @@ e.preventDefault();
 
 await addDoc(collection(db,"gramsabha"),{
 
-title:document.getElementById("gsTitle").value,
+title:
+  document.getElementById("gsTitle").value,
 
-date:document.getElementById("gsDate").value,
+date:
+  document.getElementById("gsDate").value,
 
-time:document.getElementById("gsTime").value,
+time:
+  document.getElementById("gsTime").value,
 
-place:document.getElementById("gsPlace").value,
+place:
+  document.getElementById("gsPlace").value,
 
-description:document.getElementById("gsDescription").value,
+description:
+  document.getElementById("gsDescription").value,
 
 createdAt:serverTimestamp()
 
@@ -1724,7 +1793,8 @@ loadGramSabha();
 
 async function loadGramSabha(){
 
-const list=document.getElementById("gramsabhaList");
+const list =
+  document.getElementById("gramsabhaList");
 
 if(!list) return;
 
@@ -1863,7 +1933,7 @@ resolutionForm?.addEventListener(
           .value.trim();
 
       const fileInput =
-        document.getElementById("resolutionFile");
+  document.getElementById("resolutionFile");
 
 
       if (!title) {
@@ -2746,7 +2816,7 @@ schemeForm?.addEventListener("submit", async (e) => {
 async function loadSchemes() {
 
   const list =
-    document.getElementById("schemeList");
+  document.getElementById("schemeList");
 
   if (!list) return;
 
@@ -3022,7 +3092,7 @@ villageExtraForm?.addEventListener("submit", async (e) => {
 async function loadVillageExtra() {
 
   const list =
-    document.getElementById("villageExtraList");
+  document.getElementById("villageExtraList");
 
   if (!list) return;
 
@@ -3289,7 +3359,7 @@ loadVillageExtra();
 async function loadComplaints() {
 
   const list =
-    document.getElementById("complaintList");
+  document.getElementById("complaintList");
 
   if (!list) return;
 
@@ -3551,7 +3621,7 @@ try{
 
 let qrUrl="";
 const propertyNo =
-document.getElementById("propertyNo").value.trim();
+  document.getElementById("propertyNo").value.trim();
 
 const duplicate = await getDocs(
   query(
@@ -3567,7 +3637,7 @@ if(
   alert("❌ આ મિલકત નંબર પહેલેથી અસ્તિત્વમાં છે.");
   return;
 }
-const qrFile=document.getElementById("taxQrFile");
+const qrFile = document.getElementById("taxQrFile");
 
 if(qrFile.files.length>0){
 
@@ -4106,10 +4176,10 @@ LOAD TAX PAYMENTS
 async function loadTaxPayments() {
 
 const fromDate =
-document.getElementById("fromDate")?.value;
+  document.getElementById("fromDate")?.value;
 
 const toDate =
-document.getElementById("toDate")?.value;
+  document.getElementById("toDate")?.value;
 
   const snapshot = await getDocs(collection(db, "taxPayments"));
 
@@ -4315,7 +4385,7 @@ SEARCH
 =========================================*/
 
 document.getElementById("searchTaxPayment")
-?.addEventListener("keyup",function(){
+  ?.addEventListener("keyup", function(){
 
 const value=this.value.toLowerCase();
 
@@ -4370,7 +4440,7 @@ window.location.href = "login.html";
 async function loadApplications() {
 
   const list =
-    document.getElementById("applicationsList");
+  document.getElementById("applicationsList");
 
   if (!list) return;
 
@@ -4981,7 +5051,7 @@ contactFormFixed?.addEventListener("submit", async (e) => {
 async function loadContactsFixed() {
 
   const list =
-    document.getElementById("contactList");
+  document.getElementById("contactList");
 
   if (!list) return;
 
@@ -6439,7 +6509,7 @@ async function checkNewTaxPayments() {
     );
 
     const notification =
-      document.getElementById("paymentNotification");
+    document.getElementById("paymentNotification");
 
     if (!notification) return;
 
