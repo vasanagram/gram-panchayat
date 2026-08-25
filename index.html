@@ -177,93 +177,36 @@ alt="સરપંચશ્રી">
 </section>
 
 <!-- =========================
-     About Village
+     અમારા ગામ વિશે
 ========================== -->
 
 <section id="about" class="section">
 
-<div class="container">
+  <div class="container">
 
-<h2 class="title">
+    <h2 class="title">
+      અમારા ગામ વિશે
+    </h2>
 
-અમારા ગામ વિશે
+    <!-- Firebaseમાંથી ગામની માહિતી આવશે -->
+    <div
+      id="villageInfoContainer"
+      class="about-grid">
+    </div>
 
-</h2>
+    <!-- Firebaseમાંથી ગામનો પરિચય આવશે -->
+    <div
+      id="villageHistoryContainer"
+      class="history-box">
+    </div>
 
-<div class="about-grid">
+    <!-- Firebaseમાંથી વધારાની માહિતી આવશે -->
+    <div
+      id="villageExtraContainer"
+      class="about-grid">
+    </div>
 
-<div class="about-card">
-
-<i class="fa-solid fa-users"></i>
-
-<h3>વસ્તી</h3>
-
-<p id="population">
-
-2500+
-
-</p>
-
-</div>
-
-<div class="about-card">
-
-<i class="fa-solid fa-house"></i>
-
-<h3>કુલ મકાન</h3>
-
-<p id="houses">
-
-450+
-
-</p>
-
-</div>
-
-<div class="about-card">
-
-<i class="fa-solid fa-school"></i>
-
-<h3>પ્રાથમિક શાળા</h3>
-
-<p id="school">
-
-વાસણા ચૌધરી પ્રાથમિક શાળા
-
-</p>
-
-</div>
-
-<div class="about-card">
-
-<i class="fa-solid fa-place-of-worship"></i>
-
-<h3>મંદિર</h3>
-
-<p id="temple">
-
-સિદ્ધનાથ મહાદેવ મંદિર
-
-</p>
-
-</div>
-
-</div>
-
-<div class="history-box">
-
-<h3>ગામનો પરિચય</h3>
-
-<p id="history">
-
-વાસણા ચૌધરી ગામ દહેગામ તાલુકા, ગાંધીનગર જિલ્લામાં આવેલું એક પ્રગતિશીલ ગામ છે.
-ગામમાં શિક્ષણ, કૃષિ, સામાજિક એકતા અને વિકાસના અનેક કાર્યો સતત કરવામાં આવે છે.
-
-</p>
-
-</div>
-
-</div>
+  </div>
 
 </section>
 
@@ -493,104 +436,154 @@ alt="સરપંચશ્રી">
 
 <section id="contact" class="section">
 
-<div class="container">
+  <div class="container">
 
-<h2 class="title">અમારો સંપર્ક</h2>
+    <h2 class="title">અમારો સંપર્ક</h2>
 
-<div class="contact-grid">
+    <div class="contact-grid">
 
-<div class="contact-card">
+      <!-- ગ્રામ પંચાયત કચેરી -->
 
-<h3>ગ્રામ પંચાયત કચેરી</h3>
+      <div class="contact-card">
 
-<p>વાસણા ચૌધરી ગ્રામ પંચાયત</p>
+        <h3>ગ્રામ પંચાયત કચેરી</h3>
 
-<p>તા. દહેગામ</p>
+        <p>વાસણા ચૌધરી ગ્રામ પંચાયત</p>
 
-<p>જી. ગાંધીનગર</p>
+        <p>તા. દહેગામ</p>
 
-<p>ગુજરાત</p>
+        <p>જી. ગાંધીનગર</p>
 
-<br>
+        <p>ગુજરાત</p>
 
-<p>
-<i class="fa-solid fa-phone"></i>
-<span id="phone">
-+91 XXXXXXXXXX
-</span>
-</p>
+        <br>
 
-<p>
-<i class="fa-solid fa-envelope"></i>
-<span id="email">
-info@grampanchayat.in
-</span>
-</p>
+      </div>
 
-</div>
 
-<div class="contact-card">
+      <!-- Firebase Contacts -->
 
-<h3>Google Map</h3>
+      <div
+        id="contactContainer"
+        class="contact-grid">
+        
+        <!-- Firebase પરથી સંપર્કો અહીં આવશે -->
+
+      </div>
+
+
+      <!-- Google Map -->
+
+      <div class="contact-card">
+
+        <h3>Google Map</h3>
 
 <div id="map">
 
-<iframe
-src=""
-loading="lazy"
-allowfullscreen
-referrerpolicy="no-referrer-when-downgrade">
-</iframe>
+  <a
+    href="https://maps.app.goo.gl/Pvf5jTFWkRQ8Sgi49"
+    target="_blank"
+    rel="noopener"
+    class="map-button">
+
+    📍 Google Mapsમાં Location જુઓ
+
+  </a>
 
 </div>
 
-</div>
+      </div>
 
-</div>
+    </div>
 
-</div>
+  </div>
 
 </section>
 
 <!-- =========================
-     Complaint Form
-========================== -->
+     ઓનલાઈન ફરિયાદ
+========================= -->
 
 <section id="complaint" class="section">
 
-<div class="container">
+  <div class="container">
 
-<h2 class="title">ઓનલાઈન ફરિયાદ</h2>
+    <h2 class="title">
+      ઓનલાઈન ફરિયાદ
+    </h2>
 
-<form id="complaintForm">
+    <!-- ફરિયાદ મોકલવા માટે -->
+    <form id="complaintForm">
 
-<input
-type="text"
-id="name"
-placeholder="તમારું નામ"
-required>
+      <input
+        type="text"
+        id="name"
+        placeholder="તમારું નામ"
+        required
+      >
 
-<input
-type="text"
-id="mobile"
-placeholder="મોબાઈલ નંબર"
-required>
+      <input
+        type="tel"
+        id="mobile"
+        placeholder="મોબાઈલ નંબર"
+        required
+      >
 
-<textarea
-id="message"
-placeholder="ફરિયાદ લખો"
-required>
-</textarea>
+      <input
+        type="text"
+        id="subject"
+        placeholder="ફરિયાદનો વિષય"
+        required
+      >
 
-<button type="submit">
+      <textarea
+        id="details"
+        placeholder="ફરિયાદની વિગત લખો"
+        required>
+      </textarea>
 
-ફરિયાદ મોકલો
+      <button type="submit">
+        📝 ફરિયાદ મોકલો
+      </button>
 
-</button>
+    </form>
 
-</form>
 
-</div>
+    <!-- ફરિયાદ નંબર અહીં દેખાશે -->
+
+    <div
+      id="complaintSuccess"
+      style="display:none;">
+    </div>
+
+
+    <!-- ફરિયાદનું Status તપાસવા -->
+
+    <div class="complaint-status-box">
+
+      <h3>
+        🔎 ફરિયાદની સ્થિતિ તપાસો
+      </h3>
+
+      <input
+        type="text"
+        id="complaintIdInput"
+        placeholder="ફરિયાદ નંબર દાખલ કરો"
+      >
+
+      <button
+        type="button"
+        id="checkComplaintStatusBtn">
+
+        🔍 Status જુઓ
+
+      </button>
+
+      <div id="complaintStatusResult"></div>
+
+    </div>
+
+  </div>
 
 </section>
 
@@ -1080,6 +1073,115 @@ All Rights Reserved.
 
 </div>
 
+<!-- PROPERTY FIELDS -->
+
+<div id="propertyFields" style="display:none;">
+
+  <input
+    type="text"
+    id="propertyNo"
+    placeholder="મિલકત નંબર"
+    disabled
+    required>
+
+  <input
+    type="text"
+    id="propertyApplicantName"
+    placeholder="અરજદારનું નામ"
+    disabled
+    required>
+
+  <input
+    type="tel"
+    id="propertyMobile"
+    placeholder="મોબાઈલ નંબર"
+    disabled
+    required>
+
+  <div style="
+    margin:15px 0;
+    padding:12px;
+    background:#fff3cd;
+    border-radius:8px;
+    border-left:4px solid #ffc107;
+  ">
+
+    ⚠️ <b>સૂચના:</b><br>
+    આકારણી લેવા માટે અરજદારે
+    ગ્રામ પંચાયત કચેરીમાં રૂબરૂ હાજર રહેવું.
+
+  </div>
+
+</div>
+
+<!-- ફરિયાદની વિગતો -->
+
+<div id="complaintFields" style="display:none;">
+
+  <h3>📝 ફરિયાદની વિગતો</h3>
+
+  <input
+    type="text"
+    id="complaintApplicantName"
+    placeholder="અરજદારનું પૂરું નામ"
+    required
+  >
+
+  <textarea
+    id="complaintAddress"
+    placeholder="અરજદારનું સંપૂર્ણ સરનામું"
+    required
+  ></textarea>
+
+  <input
+    type="text"
+    id="complaintSubject"
+    placeholder="ફરિયાદનો વિષય"
+    required
+  >
+
+  <textarea
+    id="complaintDetails"
+    placeholder="ફરિયાદની સંપૂર્ણ વિગત"
+    required
+  ></textarea>
+
+  <label>📎 ફરિયાદ સંબંધિત દસ્તાવેજ / ફોટો</label>
+
+  <input
+    type="file"
+    id="complaintDocuments"
+    accept=".pdf,.jpg,.jpeg,.png"
+    multiple
+  >
+
+  <small>
+    ફરિયાદ સંબંધિત જરૂરી દસ્તાવેજ અથવા ફોટો PDF/JPG/PNGમાં અપલોડ કરી શકો છો.
+  </small>
+
+  <div style="
+    margin-top:15px;
+    padding:15px;
+    background:#fff3cd;
+    border:1px solid #ffc107;
+    border-radius:8px;
+  ">
+
+    <b>⚠️ મહત્વપૂર્ણ સૂચના</b>
+
+    <p>
+      ફરિયાદની ચકાસણી ગ્રામ પંચાયત દ્વારા કરવામાં આવશે.
+    </p>
+
+    <p>
+      જરૂરી જણાય તો અરજદારે ગ્રામ પંચાયતમાં
+      <b>રૂબરૂ હાજર રહી જરૂરી માહિતી અથવા દસ્તાવેજો રજૂ કરવા પડશે.</b>
+    </p>
+
+  </div>
+
+</div>
+
       <input type="file" id="documents" accept=".jpg,.jpeg,.png,.pdf" multiple>
 
       <small>
@@ -1094,6 +1196,54 @@ All Rights Reserved.
 
 </div>
 
+  <!-- =========================================
+     APPLICANT STATUS
+========================================= -->
+
+<section class="application-status-section">
+
+  <div class="status-container">
+
+    <div class="status-icon">
+      🔎
+    </div>
+
+    <h2>
+      અરજીની સ્થિતિ તપાસો
+    </h2>
+
+    <p>
+      તમારી અરજીનો નંબર દાખલ કરીને અરજીની સ્થિતિ જાણો
+    </p>
+
+
+    <div class="status-search-box">
+
+      <input
+        type="text"
+        id="applicationSearch"
+        placeholder="જેમ કે GP-1787316094472"
+        autocomplete="off"
+      >
+
+      <button
+        type="button"
+        id="searchApplicationBtn"
+      >
+        🔍 સ્થિતિ તપાસો
+      </button>
+
+    </div>
+
+
+    <div
+      id="applicationResult"
+      class="application-result"
+    ></div>
+
+  </div>
+
+</section>
 
 <!-- અરજી સ્ટેટસ Popup -->
 <div id="statusPopup" class="popup" style="display:none;">
@@ -1254,6 +1404,7 @@ required>
   </div>
 
 </div>
+
 
 <script type="module" src="firebase.js"></script>
 

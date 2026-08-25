@@ -1575,3 +1575,221 @@ table td button{
   }
 
 }
+
+/* =========================================
+   VILLAGE EXTRA INFORMATION
+========================================= */
+
+#villageExtraContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 20px;
+}
+
+#villageExtraContainer .about-card {
+  width: auto;
+  margin: 0;
+}
+
+
+/* Mobile */
+@media (max-width: 768px) {
+
+  #villageExtraContainer {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+
+}
+
+
+/* Small Mobile */
+@media (max-width: 480px) {
+
+  #villageExtraContainer {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+/*=========================================
+  CONTACT CARDS
+=========================================*/
+
+#contactContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 100%;
+}
+
+#contactContainer .contact-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  border-top: 4px solid #1769d1;
+}
+
+#contactContainer .contact-card h3 {
+  color: #1769d1;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+#contactContainer .contact-card p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+#contactContainer .contact-card a {
+  color: #1769d1;
+  text-decoration: none;
+}
+
+#contactContainer .contact-card a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+  #contactContainer {
+    grid-template-columns: 1fr;
+  }
+
+  #contactContainer .contact-card {
+    padding: 22px;
+  }
+
+}
+
+#map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.map-button {
+  display: inline-block;
+  padding: 14px 22px;
+  background: #1769d1;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.map-button:hover {
+  opacity: 0.9;
+}
+
+/* =========================================
+   APPLICANT STATUS
+========================================= */
+
+.application-status-section {
+  padding: 60px 20px;
+  background: #f5f8fc;
+}
+
+.status-container {
+  max-width: 700px;
+  margin: auto;
+  background: #ffffff;
+  padding: 35px 25px;
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.status-icon {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f1ff;
+  border-radius: 50%;
+  font-size: 32px;
+}
+
+.status-container h2 {
+  margin: 5px 0 10px;
+  color: #1261c9;
+  font-size: 28px;
+}
+
+.status-container > p {
+  color: #666;
+  margin-bottom: 25px;
+}
+
+.status-search-box {
+  display: flex;
+  gap: 10px;
+}
+
+.status-search-box input {
+  flex: 1;
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 16px;
+  outline: none;
+}
+
+.status-search-box input:focus {
+  border-color: #1261c9;
+}
+
+.status-search-box button {
+  padding: 14px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #1261c9;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status-search-box button:hover {
+  background: #0d4fa8;
+}
+
+.application-result {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.application-result > div {
+  border-radius: 12px !important;
+  border: 1px solid #ddd;
+}
+
+@media (max-width: 600px) {
+
+  .status-container {
+    padding: 25px 18px;
+  }
+
+  .status-search-box {
+    flex-direction: column;
+  }
+
+  .status-search-box button {
+    width: 100%;
+  }
+
+  .status-container h2 {
+    font-size: 24px;
+  }
+
+}

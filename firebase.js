@@ -327,39 +327,69 @@ VIDEO GALLERY
 
 async function loadVideos(){
 
-const container=document.getElementById("videoContainer");
+  const container =
+    document.getElementById("videoContainer");
 
-if(!container) return;
+  if(!container) return;
 
-const snapshot=await getDocs(collection(db,"videos"));
+  const snapshot =
+    await getDocs(
+      collection(db,"videos")
+    );
 
-let html="";
+  let html = "";
 
-snapshot.forEach(doc=>{
+  snapshot.forEach(docSnap => {
 
-const data=doc.data();
+    const data = docSnap.data();
 
-html+=`
+    let videoUrl = data.url || "";
 
-<div class="video-card">
+    // YouTube URL ને Embed URLમાં ફેરવો
+    if (videoUrl.includes("youtube.com/watch?v=")) {
 
-<iframe
+      const videoId =
+        videoUrl.split("v=")[1].split("&")[0];
 
-src="${data.url}"
+      videoUrl =
+        "https://www.youtube.com/embed/" + videoId;
 
-allowfullscreen>
+    }
 
-</iframe>
+    // youtu.be URL માટે
+    else if (videoUrl.includes("youtu.be/")) {
 
-<h3>${data.title}</h3>
+      const videoId =
+        videoUrl.split("youtu.be/")[1].split("?")[0];
 
-</div>
+      videoUrl =
+        "https://www.youtube.com/embed/" + videoId;
 
-`;
+    }
 
-});
+    html += `
 
-container.innerHTML=html;
+      <div class="video-card">
+
+        <iframe
+          src="${videoUrl}"
+          width="100%"
+          height="300"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+
+        <h3>${data.title || "વિડિયો"}</h3>
+
+      </div>
+
+    `;
+
+  });
+
+  container.innerHTML =
+    html || "હાલ કોઈ વિડિયો ઉપલબ્ધ નથી.";
 
 }
 
@@ -521,89 +551,776 @@ container.innerHTML=html;
 loadDocuments();
 
 /*=========================================
-GOVERNMENT SCHEMES
+  GOVERNMENT SCHEMES
 =========================================*/
 
 async function loadSchemes(){
 
-const container=document.getElementById("schemeContainer");
+  const container =
+    document.getElementById("schemeContainer");
 
-if(!container) return;
+  if(!container) return;
 
-const snapshot=await getDocs(collection(db,"schemes"));
+  try {
 
-let html="";
+    /*=========================================
+      OFFICIAL GOVERNMENT LINKS
+    =========================================*/
 
-snapshot.forEach(doc=>{
+    const governmentLinks = [
 
-const data=doc.data();
+      {
+        title: "🇮🇳 myScheme – સરકારી યોજનાઓ",
+        description:
+          "કેન્દ્ર અને રાજ્ય સરકારની વિવિધ યોજનાઓ શોધવા માટેનું સત્તાવાર પોર્ટલ.",
+        url: "https://www.myscheme.gov.in/"
+      },
 
-html+=`
+      {
+        title: "🇬🇺 Digital Gujarat",
+        description:
+          "ગુજરાત સરકારની વિવિધ Online સેવાઓ માટેનું સત્તાવાર પોર્ટલ.",
+        url: "https://www.digitalgujarat.gov.in/"
+      },
 
-<div class="scheme-card">
+      {
+        title: "🏛️ સામાજિક ન્યાય અને અધિકારીતા વિભાગ – ગુજરાત",
+        description:
+          "ગુજરાત સરકારની વિવિધ કલ્યાણકારી યોજનાઓની માહિતી.",
+        url: "https://sje.gujarat.gov.in/"
+      },
 
-<h3>${data.title}</h3>
+      {
+        title: "🎓 વિકસતી જાતિ કલ્યાણ – યોજનાઓ",
+        description:
+          "શૈક્ષણિક, આર્થિક અને અન્ય કલ્યાણકારી યોજનાઓની માહિતી.",
+        url: "https://sje.gujarat.gov.in/ddcw/Schemes"
+      },
 
-<p>${data.desc}</p>
+      {
+        title: "🌾 PM-KISAN",
+        description:
+          "ખેડૂતો માટેની કેન્દ્ર સરકારની યોજના.",
+        url: "https://pmkisan.gov.in/"
+      }
 
-</div>
+    ];
 
-`;
 
-});
+    /*=========================================
+      FIREBASE SCHEMES
+    =========================================*/
 
-container.innerHTML=html;
+    const snapshot =
+      await getDocs(
+        collection(db,"schemes")
+      );
+
+    let html = "";
+
+
+    /*=========================================
+      OFFICIAL LINKS DISPLAY
+    =========================================*/
+
+    governmentLinks.forEach((scheme) => {
+
+      html += `
+
+        <div class="scheme-card">
+
+          <h3>
+            ${scheme.title}
+          </h3>
+
+          <p>
+            ${scheme.description}
+          </p>
+
+          <a
+            href="${scheme.url}"
+            target="_blank"
+            rel="noopener noreferrer">
+
+            🔗 વધુ માહિતી
+
+          </a>
+
+        </div>
+
+      `;
+
+    });
+
+
+    /*=========================================
+      FIREBASE CUSTOM SCHEMES
+    =========================================*/
+
+    snapshot.forEach((docSnap) => {
+
+      const data =
+        docSnap.data();
+
+      html += `
+
+        <div class="scheme-card">
+
+          <h3>
+            🏛️ ${data.title || "-"}
+          </h3>
+
+          <p>
+            ${data.description || data.desc || "-"}
+          </p>
+
+          ${
+            data.link
+            ? `
+              <a
+                href="${
+                  data.link.startsWith("http://") ||
+                  data.link.startsWith("https://")
+                    ? data.link
+                    : "https://" + data.link
+                }"
+                target="_blank"
+                rel="noopener noreferrer">
+
+                🔗 વધુ માહિતી
+
+              </a>
+            `
+            : ""
+          }
+
+        </div>
+
+      `;
+
+    });
+
+
+    container.innerHTML =
+      html ||
+      "<p>હાલ કોઈ સરકારી યોજના ઉપલબ્ધ નથી.</p>";
+
+
+  } catch(error) {
+
+    console.error(error);
+
+    container.innerHTML =
+      "<p>❌ સરકારી યોજનાઓ લોડ કરવામાં ભૂલ આવી.</p>";
+
+  }
 
 }
 
 loadSchemes();
 
 /*=========================================
-COMPLAINT FORM
+  VILLAGE INFORMATION - WEBSITE
 =========================================*/
 
-const complaintForm=document.getElementById("complaintForm");
+async function loadVillageInfo() {
 
-complaintForm?.addEventListener("submit",async(e)=>{
+  const infoContainer =
+    document.getElementById("villageInfoContainer");
 
-e.preventDefault();
+  const historyContainer =
+    document.getElementById("villageHistoryContainer");
 
-const name=document.getElementById("name").value.trim();
+  const extraContainer =
+    document.getElementById("villageExtraContainer");
 
-const mobile =
-  document.getElementById("serviceMobile").value.trim();
+  try {
 
-const message=document.getElementById("message").value.trim();
+    /*=========================================
+      MAIN VILLAGE INFO
+    =========================================*/
 
-try{
+    const infoSnap =
+      await getDoc(
+        doc(db, "villageInfo", "main")
+      );
 
-await addDoc(collection(db,"complaints"),{
+    if (infoSnap.exists()) {
 
-name,
+      const data = infoSnap.data();
 
-mobile,
+      let html = "";
 
-message,
+      if (data.population) {
+        html += `
+          <div class="about-card">
+            <i class="fa-solid fa-users"></i>
+            <h3>વસ્તી</h3>
+            <p>${data.population}</p>
+          </div>
+        `;
+      }
 
-status:"Pending",
+      if (data.houses) {
+        html += `
+          <div class="about-card">
+            <i class="fa-solid fa-house"></i>
+            <h3>કુલ મકાન</h3>
+            <p>${data.houses}</p>
+          </div>
+        `;
+      }
 
-createdAt:serverTimestamp()
+      if (data.school) {
+        html += `
+          <div class="about-card">
+            <i class="fa-solid fa-school"></i>
+            <h3>પ્રાથમિક શાળા</h3>
+            <p>${data.school}</p>
+          </div>
+        `;
+      }
 
-});
+      if (data.temple) {
+        html += `
+          <div class="about-card">
+            <i class="fa-solid fa-place-of-worship"></i>
+            <h3>મંદિર</h3>
+            <p>${data.temple}</p>
+          </div>
+        `;
+      }
 
-alert("તમારી ફરિયાદ સફળતાપૂર્વક નોંધાઈ ગઈ.");
+      infoContainer.innerHTML =
+        html || "<p>ગામની માહિતી ઉપલબ્ધ નથી.</p>";
 
-complaintForm.reset();
+      if (data.history) {
 
-}catch(err){
+        historyContainer.innerHTML = `
+          <h3>ગામનો પરિચય</h3>
+          <p>${data.history}</p>
+        `;
 
-console.log(err);
+      } else {
 
-alert("ફરિયાદ મોકલવામાં સમસ્યા આવી.");
+        historyContainer.innerHTML = "";
+
+      }
+
+    } else {
+
+      infoContainer.innerHTML =
+        "<p>ગામની માહિતી ઉપલબ્ધ નથી.</p>";
+
+      historyContainer.innerHTML = "";
+
+    }
+
+
+    /*=========================================
+      EXTRA VILLAGE INFORMATION
+    =========================================*/
+
+    const extraSnap =
+      await getDocs(
+        collection(db, "villageExtra")
+      );
+
+    let extraHTML = "";
+
+    extraSnap.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      extraHTML += `
+  <div class="about-card">
+
+    <i class="fa-solid fa-circle-info"></i>
+
+    <h3>
+      ${data.title || "-"}
+    </h3>
+
+    <p>
+      ${data.description || "-"}
+    </p>
+
+  </div>
+`;
+
+    });
+
+    extraContainer.innerHTML =
+      extraHTML || "";
+
+  } catch (error) {
+
+    console.error(
+      "Village information error:",
+      error
+    );
+
+  }
 
 }
 
-});
+
+/*=========================================
+  START
+=========================================*/
+
+loadVillageInfo();
+
+/*=========================================
+  CONTACTS - PUBLIC WEBSITE
+=========================================*/
+
+async function loadContactsWebsite() {
+
+  const container =
+    document.getElementById("contactContainer");
+
+  if (!container) return;
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "contacts")
+      );
+
+    let html = "";
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      html += `
+
+        <div class="contact-card">
+
+          <h3>
+            👤 ${data.name || "-"}
+          </h3>
+
+          <p>
+            <strong>${data.position || "-"}</strong>
+          </p>
+
+          ${
+            data.mobile
+              ? `
+                <p>
+                  <i class="fa-solid fa-phone"></i>
+                  <a href="tel:${data.mobile}">
+                    ${data.mobile}
+                  </a>
+                </p>
+              `
+              : ""
+          }
+
+          ${
+            data.email
+              ? `
+                <p>
+                  <i class="fa-solid fa-envelope"></i>
+                  <a href="mailto:${data.email}">
+                    ${data.email}
+                  </a>
+                </p>
+              `
+              : ""
+          }
+
+        </div>
+
+      `;
+
+    });
+
+    container.innerHTML =
+      html ||
+      "<p>હાલ કોઈ સંપર્ક માહિતી ઉપલબ્ધ નથી.</p>";
+
+  } catch (error) {
+
+    console.error(
+      "Contacts load error:",
+      error
+    );
+
+    container.innerHTML =
+      "<p>❌ સંપર્ક માહિતી લોડ કરવામાં ભૂલ આવી.</p>";
+
+  }
+
+}
+
+
+/*=========================================
+  LOAD CONTACTS
+=========================================*/
+
+loadContactsWebsite();
+
+/*=========================================
+  MAIN PANCHAYAT CONTACT BUTTONS
+=========================================*/
+
+async function loadMainContactButtons() {
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "contacts")
+      );
+
+    let mobile = "";
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      // સરપંચશ્રીનો નંબર શોધવો
+      const position =
+        (data.position || "").trim();
+
+      if (
+        position.includes("સરપંચ") &&
+        data.mobile
+      ) {
+
+        mobile = data.mobile;
+
+      }
+
+    });
+
+    if (!mobile) {
+
+      console.log(
+        "સરપંચશ્રીનો મોબાઈલ નંબર મળ્યો નથી."
+      );
+
+      return;
+    }
+
+
+    /*=====================================
+      MOBILE NUMBER FORMAT
+    =====================================*/
+
+    mobile =
+      String(mobile)
+        .replace(/\D/g, "");
+
+    // 10 digit નંબર હોય તો India country code ઉમેરો
+    if (mobile.length === 10) {
+
+      mobile = "91" + mobile;
+
+    }
+
+
+    console.log(
+      "Main Contact Number:",
+      mobile
+    );
+
+
+    /*=====================================
+      CALL BUTTON
+    =====================================*/
+
+    const callBtn =
+      document.getElementById("callBtn");
+
+    if (callBtn) {
+
+      callBtn.href =
+        "tel:+" + mobile;
+
+    }
+
+
+    /*=====================================
+      WHATSAPP BUTTON
+    =====================================*/
+
+    const whatsappBtn =
+      document.getElementById(
+        "whatsappBtn"
+      );
+
+    if (whatsappBtn) {
+
+      whatsappBtn.href =
+        "https://wa.me/" + mobile;
+
+      whatsappBtn.target = "_blank";
+
+      whatsappBtn.rel = "noopener";
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Main contact error:",
+      error
+    );
+
+  }
+
+}
+
+loadMainContactButtons();
+
+/*=========================================
+  COMPLAINT FORM
+=========================================*/
+
+const complaintForm =
+  document.getElementById("complaintForm");
+
+
+complaintForm?.addEventListener(
+  "submit",
+  async (e) => {
+
+    e.preventDefault();
+
+    const name =
+      document.getElementById("name")
+        .value.trim();
+
+    const mobile =
+      document.getElementById("mobile")
+        .value.trim();
+
+    const subject =
+      document.getElementById("subject")
+        .value.trim();
+
+    const details =
+      document.getElementById("details")
+        .value.trim();
+
+
+    try {
+
+      const complaintRef =
+        await addDoc(
+          collection(db, "complaints"),
+          {
+
+            name: name,
+
+            mobile: mobile,
+
+            subject: subject,
+
+            details: details,
+
+            status: "Pending",
+
+            createdAt:
+              serverTimestamp()
+
+          }
+        );
+
+
+      /* ફરિયાદ નંબર બતાવો */
+
+      const successBox =
+        document.getElementById(
+          "complaintSuccess"
+        );
+
+      if (successBox) {
+
+        successBox.style.display =
+          "block";
+
+        successBox.innerHTML = `
+
+          <div class="success-message">
+
+            ✅ તમારી ફરિયાદ સફળતાપૂર્વક
+            નોંધાઈ ગઈ છે.
+
+            <br><br>
+
+            <b>તમારો ફરિયાદ નંબર:</b>
+
+            <strong>
+              ${complaintRef.id}
+            </strong>
+
+            <br><br>
+
+            ⚠️ આ ફરિયાદ નંબર સાચવી રાખજો.
+            Status જોવા માટે તેની જરૂર પડશે.
+
+          </div>
+
+        `;
+
+      }
+
+
+      complaintForm.reset();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "❌ ફરિયાદ મોકલવામાં સમસ્યા આવી."
+      );
+
+    }
+
+  }
+);
+
+
+/*=========================================
+  CHECK COMPLAINT STATUS
+=========================================*/
+
+const checkComplaintStatusBtn =
+  document.getElementById(
+    "checkComplaintStatusBtn"
+  );
+
+
+checkComplaintStatusBtn?.addEventListener(
+  "click",
+  async () => {
+
+    const complaintId =
+      document.getElementById(
+        "complaintIdInput"
+      ).value.trim();
+
+
+    const result =
+      document.getElementById(
+        "complaintStatusResult"
+      );
+
+
+    if (!complaintId) {
+
+      result.innerHTML =
+        "<p>⚠️ ફરિયાદ નંબર દાખલ કરો.</p>";
+
+      return;
+
+    }
+
+
+    try {
+
+      const complaintRef =
+        doc(
+          db,
+          "complaints",
+          complaintId
+        );
+
+
+      const complaintSnap =
+        await getDoc(
+          complaintRef
+        );
+
+
+      if (!complaintSnap.exists()) {
+
+        result.innerHTML = `
+          <p>
+            ❌ ફરિયાદ નંબર મળ્યો નથી.
+          </p>
+        `;
+
+        return;
+
+      }
+
+
+      const data =
+        complaintSnap.data();
+
+
+      let statusClass =
+        "status-pending";
+
+
+      if (data.status === "તપાસમાં") {
+
+        statusClass =
+          "status-investigation";
+
+      }
+
+
+      if (data.status === "ઉકેલાઈ") {
+
+        statusClass =
+          "status-solved";
+
+      }
+
+
+      if (data.status === "Reject") {
+
+        statusClass =
+          "status-rejected";
+
+      }
+
+
+      result.innerHTML = `
+
+        <div class="complaint-status-card">
+
+          <p>
+            <b>ફરિયાદનો વિષય:</b>
+            ${data.subject || "-"}
+          </p>
+
+          <p>
+            <b>હાલની સ્થિતિ:</b>
+          </p>
+
+          <div class="${statusClass}">
+
+            ${data.status || "Pending"}
+
+          </div>
+
+        </div>
+
+      `;
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      result.innerHTML =
+        "<p>❌ Status તપાસવામાં ભૂલ આવી.</p>";
+
+    }
+
+  }
+);
 /*=========================================
 SEARCH
 =========================================*/
@@ -637,40 +1354,6 @@ section.style.display="block";
 });
 
 }
-
-});
-
-/*=========================================
-WHATSAPP
-=========================================*/
-
-const whatsappBtn=document.getElementById("whatsappBtn");
-
-whatsappBtn?.addEventListener("click",(e)=>{
-
-e.preventDefault();
-
-window.open(
-
-"https://wa.me/918849148096",
-
-"_blank"
-
-);
-
-});
-
-/*=========================================
-CALL BUTTON
-=========================================*/
-
-const callBtn=document.getElementById("callBtn");
-
-callBtn?.addEventListener("click",(e)=>{
-
-e.preventDefault();
-
-window.location.href="tel:+918849148096";
 
 });
 
@@ -799,6 +1482,72 @@ if (incomeFields) {
 
 }
 
+const complaintFields =
+  document.getElementById("complaintFields");
+
+if (complaintFields) {
+
+  complaintFields.style.display =
+    type === "complaint" ? "block" : "none";
+
+  complaintFields.querySelectorAll(
+    "input, select, textarea"
+  ).forEach(el => {
+    el.disabled = type !== "complaint";
+  });
+
+}
+
+const propertyFields =
+  document.getElementById("propertyFields");
+
+if (propertyFields) {
+
+  propertyFields.style.display =
+    type === "property" ? "block" : "none";
+
+  propertyFields
+    .querySelectorAll("input, select, textarea")
+    .forEach(el => {
+
+      el.disabled =
+        type !== "property";
+
+    });
+
+}
+
+const normalName =
+  document.getElementById("applicantName");
+
+const normalMobile =
+  document.getElementById("serviceMobile");
+
+const normalDetails =
+  document.getElementById("details");
+
+if (type === "property") {
+
+  normalName.style.display = "none";
+  normalMobile.style.display = "none";
+  normalDetails.style.display = "none";
+
+  normalName.disabled = true;
+  normalMobile.disabled = true;
+  normalDetails.disabled = true;
+
+} else {
+
+  normalName.style.display = "";
+  normalMobile.style.display = "";
+  normalDetails.style.display = "";
+
+  normalName.disabled = false;
+  normalMobile.disabled = false;
+  normalDetails.disabled = false;
+
+}
+
 document.getElementById("servicePopup").style.display="flex";
 
 }
@@ -919,6 +1668,62 @@ if (files && files.length > 0) {
 
 
 /*=========================================
+  PROPERTY ASSESSMENT DATA
+=========================================*/
+
+let propertyData = null;
+
+if (selectedService === "property") {
+
+  const propertyNo =
+    document
+      .getElementById("propertyNo")
+      .value.trim();
+
+  const propertyApplicantName =
+    document
+      .getElementById("propertyApplicantName")
+      .value.trim();
+
+  const propertyMobile =
+    document
+      .getElementById("propertyMobile")
+      .value.trim();
+
+
+  if (
+    !propertyNo ||
+    !propertyApplicantName ||
+    !propertyMobile
+  ) {
+
+    alert(
+      "⚠️ મિલકત નંબર, અરજદારનું નામ અને મોબાઈલ નંબર ભરવો જરૂરી છે."
+    );
+
+    return;
+  }
+
+
+  propertyData = {
+
+    propertyNo:
+      propertyNo,
+
+    applicantName:
+      propertyApplicantName,
+
+    mobile:
+      propertyMobile,
+
+    notice:
+      "આકારણી લેવા માટે અરજદારે ગ્રામ પંચાયત કચેરીમાં રૂબરૂ હાજર રહેવું."
+
+  };
+
+}
+
+/*=========================================
   INCOME CERTIFICATE DATA
 =========================================*/
 
@@ -1017,6 +1822,66 @@ if (selectedService === "income") {
 
 }
 
+/*=========================================
+  COMPLAINT DATA
+=========================================*/
+
+let complaintData = null;
+
+if (selectedService === "complaint") {
+
+  const complaintFiles =
+    document.getElementById("complaintDocuments").files;
+
+  let complaintDocumentUrls = [];
+
+  if (complaintFiles && complaintFiles.length > 0) {
+
+    for (let i = 0; i < complaintFiles.length; i++) {
+
+      const file = complaintFiles[i];
+
+      const url =
+        await uploadToSupabase(file);
+
+      complaintDocumentUrls.push({
+        name: file.name,
+        url: url
+      });
+
+    }
+
+  }
+
+  complaintData = {
+
+    complaintApplicantName:
+      document
+        .getElementById("complaintApplicantName")
+        .value.trim(),
+
+    complaintAddress:
+      document
+        .getElementById("complaintAddress")
+        .value.trim(),
+
+    complaintSubject:
+      document
+        .getElementById("complaintSubject")
+        .value.trim(),
+
+    complaintDetails:
+      document
+        .getElementById("complaintDetails")
+        .value.trim(),
+
+    complaintDocuments:
+      complaintDocumentUrls
+
+  };
+
+}
+
     /*=========================================
       BIRTH CERTIFICATE DATA
     =========================================*/
@@ -1026,19 +1891,19 @@ if (selectedService === "income") {
     if (selectedService === "birth") {
 
       const oldBirthFile =
-        document.getElementById("oldBirthCertificate").files[0];
+  document.getElementById("oldBirthCertificate")?.files[0];
 
-      if (!oldBirthFile) {
+let oldBirthCertificate = null;
 
-        alert("⚠️ જૂનો જન્મ દાખલો અપલોડ કરવો જરૂરી છે.");
+if (oldBirthFile) {
+  const oldBirthUrl =
+    await uploadToSupabase(oldBirthFile);
 
-        return;
-
-      }
-
-      const oldBirthUrl =
-        await uploadToSupabase(oldBirthFile);
-
+  oldBirthCertificate = {
+    name: oldBirthFile.name,
+    url: oldBirthUrl
+  };
+}
 
       birthData = {
 
@@ -1081,13 +1946,7 @@ if (selectedService === "income") {
         birthRegistrationDate:
           document.getElementById("birthRegistrationDate").value,
 
-        oldBirthCertificate: {
-
-          name: oldBirthFile.name,
-
-          url: oldBirthUrl
-
-        }
+        oldBirthCertificate: oldBirthCertificate
 
       };
 
@@ -1165,36 +2024,52 @@ if (selectedService === "income") {
     =========================================*/
 
     await addDoc(
-      collection(db, "applications"),
-      {
+  collection(db, "applications"),
+  {
 
-        service: selectedService,
+    service: selectedService,
 
-        name: applicantName,
+    name:
+      selectedService === "property"
+        ? document
+            .getElementById("propertyApplicantName")
+            .value.trim()
+        : applicantName,
 
-        mobile: mobile,
+    mobile:
+      selectedService === "property"
+        ? document
+            .getElementById("propertyMobile")
+            .value.trim()
+        : mobile,
 
-        details: details,
+    details: details,
 
-        documents: documentUrls,
+    documents: documentUrls,
 
-applicationForm: applicationForm,
+    applicationForm: applicationForm,
 
-        birthData: birthData,
+    birthData: birthData,
 
-        deathData: deathData,
+    deathData: deathData,
 
-incomeData: incomeData,
+    incomeData: incomeData,
 
-        applicationNo: applicationNo,
+    complaintData: complaintData,
 
-        status: "Pending",
+    propertyData:
+      selectedService === "property"
+        ? propertyData
+        : null,
 
-        createdAt: serverTimestamp()
+    applicationNo: applicationNo,
 
-      }
-    );
+    status: "Pending",
 
+    createdAt: serverTimestamp()
+
+  }
+);
 
     /*=========================================
       SUCCESS
@@ -1528,31 +2403,82 @@ if(!paymentSnapshot.empty){
 
 }
 
+/*=========================================
+  TAX DETAILS
+=========================================*/
+
+const totalTax = Number(data.taxAmount || 0);
+
+/*=========================================
+  DISPLAY PROPERTY TAX
+=========================================*/
+
 result.innerHTML = `
 
 <div class="tax-result-card">
 
-<h3>🏠 ${data.ownerName}</h3>
+<h3>🏠 ${data.ownerName || "-"}</h3>
 
-<p><b>મિલકત નંબર :</b> ${data.propertyNo}</p>
+<p>
+<b>મિલકત નંબર :</b>
+${data.propertyNo || "-"}
+</p>
 
-<p><b>ઘર નંબર :</b> ${data.houseNo}</p>
+<p>
+<b>ઘર નંબર :</b>
+${data.houseNo || "-"}
+</p>
 
-<p><b>વેરાની રકમ :</b> ₹ ${data.taxAmount}</p>
+<div style="
+margin-top:15px;
+padding:15px;
+background:#f8f9fa;
+border-radius:12px;
+border:1px solid #ddd;
+">
 
-<p><b>વર્ષ :</b> ${data.taxYear}</p>
+<h3 style="margin-top:0;">
+📋 વેરાની વિગત
+</h3>
 
-<p><b>છેલ્લી તારીખ :</b> ${data.lastDate}</p>
+<p>
+<b>વર્ષ :</b>
+${data.taxYear || "2026-27"}
+</p>
+
+<p>
+<b>છેલ્લી તારીખ :</b>
+${data.lastDate || "31-03-2027"}
+</p>
+
+<hr>
+
+<h3 style="
+color:#d35400;
+margin-bottom:5px;
+">
+💰 કુલ ભરવાનો વેરો :
+₹ ${totalTax}
+</h3>
+
+</div>
+
 
 ${taxQr ? `
-<div style="text-align:center;margin:15px 0;">
+
+<div style="text-align:center;margin:20px 0;">
 
 <img
 src="${taxQr}"
 width="180"
-style="margin:15px 0;border-radius:8px;">
+style="
+margin:15px 0;
+border-radius:8px;
+">
 
-<p><b>📱 પહેલા QR Scan કરીને મિલકત વેરો ભરો.</b></p>
+<p>
+<b>📱 પહેલા QR Scan કરીને મિલકત વેરો ભરો.</b>
+</p>
 
 <button
 id="showPaidBtn"
@@ -1561,14 +2487,18 @@ margin-top:10px;
 background:#0d6efd;
 color:#fff;
 border:none;
-padding:10px 18px;
+padding:12px 18px;
 border-radius:8px;
 cursor:pointer;
+font-size:16px;
 ">
+
 ✅ મેં QR દ્વારા મિલકત વેરો ભરી દીધો
+
 </button>
 
 </div>
+
 ` : ""}
 
 </div>
@@ -1576,6 +2506,27 @@ cursor:pointer;
 ${receiptMessage}
 
 `;
+
+
+/*=========================================
+  PAYMENT BUTTON
+=========================================*/
+
+const showPaidBtn =
+document.getElementById("showPaidBtn");
+
+if(showPaidBtn){
+
+showPaidBtn.addEventListener("click",()=>{
+
+document.getElementById("paymentPopup").style.display="flex";
+
+document.getElementById("paymentPropertyNo").value =
+data.propertyNo;
+
+});
+
+}
 
 document.getElementById("showPaidBtn").addEventListener("click",()=>{
 

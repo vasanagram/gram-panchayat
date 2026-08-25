@@ -1,3 +1,4 @@
+console.log("🔥 MY ADMIN.JS IS RUNNING");
 import { db, auth, supabase } from "./firebase-config.js";
 
 import {
@@ -25,16 +26,63 @@ const { jsPDF } = window.jspdf;
 let taxChart = null;
 
 /*=========================================
-LOGIN CHECK
+  ADMIN SECURITY CHECK
 =========================================*/
 
-onAuthStateChanged(auth,(user)=>{
+onAuthStateChanged(auth, async (user) => {
 
-if(!user){
+  // Login નથી
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
 
-window.location.href="login.html";
+  try {
 
-}
+    // admins collection માં UID શોધો
+    const adminRef = doc(db, "admins", user.uid);
+    const adminSnap = await getDoc(adminRef);
+
+    // Admin document નથી
+    if (!adminSnap.exists()) {
+
+      alert("❌ તમને Admin access નથી.");
+
+      await signOut(auth);
+
+      window.location.href = "login.html";
+
+      return;
+    }
+
+    const adminData = adminSnap.data();
+
+    // role admin હોવો જરૂરી
+    if (adminData.role !== "admin") {
+
+      alert("❌ તમારા account પાસે Admin permission નથી.");
+
+      await signOut(auth);
+
+      window.location.href = "login.html";
+
+      return;
+    }
+
+    // Admin successfully verified
+    console.log("✅ Admin verified:", user.email);
+    console.log("Admin UID:", user.uid);
+
+  } catch (error) {
+
+    console.error("Admin Security Error:", error);
+
+    alert("❌ Admin verification કરવામાં ભૂલ આવી.");
+
+    await signOut(auth);
+
+    window.location.href = "login.html";
+  }
 
 });
 
@@ -314,7 +362,7 @@ async function uploadToSupabase(file) {
 
   return publicUrlData.publicUrl;
 }
-
+window.uploadToSupabase = uploadToSupabase;
 function previewImage(inputId, previewId) {
 
   const input = document.getElementById(inputId);
@@ -491,6 +539,165 @@ console.log("Tax QR:", taxQr);
 });
 
 loadWebsiteSettings();
+
+/*=========================================
+  VILLAGE INFORMATION
+=========================================*/
+
+const villageInfoForm =
+  document.getElementById("villageInfoForm");
+
+
+async function loadVillageInfoAdmin() {
+
+  try {
+
+    const snap =
+      await getDoc(
+        doc(db, "villageInfo", "main")
+      );
+
+    if (!snap.exists()) return;
+
+    const data = snap.data();
+
+    document.getElementById("villagePopulation").value =
+      data.population || "";
+
+    document.getElementById("villageHouses").value =
+      data.houses || "";
+
+    document.getElementById("villageSchool").value =
+      data.school || "";
+
+    document.getElementById("villageTemple").value =
+      data.temple || "";
+
+    document.getElementById("villageHistory").value =
+      data.history || "";
+
+  } catch (error) {
+
+    console.error(
+      "Village info load error:",
+      error
+    );
+
+  }
+
+}
+
+
+villageInfoForm?.addEventListener(
+  "submit",
+  async (e) => {
+
+    e.preventDefault();
+
+    try {
+
+      await setDoc(
+        doc(db, "villageInfo", "main"),
+        {
+
+          population:
+            document
+              .getElementById("villagePopulation")
+              .value.trim(),
+
+          houses:
+            document
+              .getElementById("villageHouses")
+              .value.trim(),
+
+          school:
+            document
+              .getElementById("villageSchool")
+              .value.trim(),
+
+          temple:
+            document
+              .getElementById("villageTemple")
+              .value.trim(),
+
+          history:
+            document
+              .getElementById("villageHistory")
+              .value.trim(),
+
+          updatedAt:
+            serverTimestamp()
+
+        }
+      );
+
+      alert(
+        "✅ ગામની માહિતી સફળતાપૂર્વક સેવ થઈ ગઈ."
+      );
+
+      loadVillageInfoAdmin();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "❌ માહિતી સેવ કરવામાં ભૂલ આવી: " +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+/*=========================================
+  LOAD VILLAGE INFORMATION
+=========================================*/
+
+loadVillageInfoAdmin();
+
+/*=========================================
+  VILLAGE INFORMATION - DELETE
+=========================================*/
+
+async function deleteVillageInfo() {
+
+  const ok = confirm(
+    "⚠️ શું તમે ગામની સંપૂર્ણ માહિતી Delete કરવા માંગો છો?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "villageInfo", "main")
+    );
+
+    document.getElementById("villageInfoForm")?.reset();
+
+    alert(
+      "🗑️ ગામની માહિતી Delete થઈ ગઈ."
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteVillageInfo =
+  deleteVillageInfo;
+
 /*=========================================
 MEMBERS
 =========================================*/
@@ -782,204 +989,703 @@ refreshDashboard();
 window.editNotice = editNotice;
 
 /*=========================================
-PHOTO GALLERY
+  PHOTO GALLERY
 =========================================*/
 
-const galleryForm=document.getElementById("galleryForm");
+const galleryForm =
+  document.getElementById("galleryForm");
 
-galleryForm?.addEventListener("submit",async(e)=>{
+galleryForm?.addEventListener("submit", async (e) => {
 
-e.preventDefault();
+  e.preventDefault();
 
-let galleryImage = "";
+  try {
 
-if(document.getElementById("galleryImageFile").files.length>0){
+    const album =
+      document.getElementById("galleryAlbum")?.value.trim() || "";
 
-galleryImage = await uploadToSupabase(
-document.getElementById("galleryImageFile").files[0]
-);
+    const eventName =
+      document.getElementById("galleryEventName")?.value.trim() || "";
 
-}
+    const eventDate =
+      document.getElementById("galleryDate")?.value || "";
 
-await addDoc(collection(db,"gallery"),{
+    const fileInput =
+      document.getElementById("galleryImageFile");
 
-title:document.getElementById("galleryTitle").value,
+    /* ------------------------------------
+       VALIDATION
+    ------------------------------------ */
 
-image:galleryImage,
+    if (!album) {
+      alert("⚠️ Album Name લખો.");
+      return;
+    }
 
-createdAt:serverTimestamp()
+    if (!eventName) {
+      alert("⚠️ Event Name લખો.");
+      return;
+    }
+
+    if (!fileInput || fileInput.files.length === 0) {
+      alert("⚠️ કૃપા કરીને ઓછામાં ઓછો એક ફોટો પસંદ કરો.");
+      return;
+    }
+
+
+    /* ------------------------------------
+       MULTIPLE PHOTO UPLOAD
+    ------------------------------------ */
+
+    const files = Array.from(fileInput.files);
+
+    const uploadedImages = [];
+
+    for (const file of files) {
+
+      if (!file.type.startsWith("image/")) {
+        alert(
+          "❌ " +
+          file.name +
+          " Image નથી."
+        );
+        continue;
+      }
+
+      const imageUrl =
+        await uploadToSupabase(file);
+
+      if (imageUrl) {
+        uploadedImages.push(imageUrl);
+      }
+
+    }
+
+
+    if (uploadedImages.length === 0) {
+      throw new Error(
+        "કોઈ ફોટો Upload થયો નથી."
+      );
+    }
+
+
+    /* ------------------------------------
+       SAVE EACH PHOTO IN FIRESTORE
+    ------------------------------------ */
+
+    for (const imageUrl of uploadedImages) {
+
+      await addDoc(
+        collection(db, "gallery"),
+        {
+
+          album: album,
+
+          eventName: eventName,
+
+          eventDate: eventDate,
+
+          image: imageUrl,
+
+          createdAt:
+            serverTimestamp()
+
+        }
+      );
+
+    }
+
+
+    /* ------------------------------------
+       SUCCESS
+    ------------------------------------ */
+
+    alert(
+      `✅ ${uploadedImages.length} ફોટો સફળતાપૂર્વક ઉમેરાયા.`
+    );
+
+
+    galleryForm.reset();
+
+
+    const preview =
+      document.getElementById("galleryPreview");
+
+    if (preview) {
+      preview.src = "";
+    }
+
+
+    loadGallery();
+
+    refreshDashboard();
+
+
+  } catch (error) {
+
+    console.error(
+      "Gallery Upload Error:",
+      error
+    );
+
+    alert(
+      "❌ ફોટો ઉમેરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+
+  }
 
 });
 
-alert("ફોટો સફળતાપૂર્વક ઉમેરાયો.");
 
-galleryForm.reset();
-document.getElementById("galleryPreview").src="";
-loadGallery();
-refreshDashboard();
-});
-
-async function loadGallery(){
-
-const list=document.getElementById("galleryList");
-
-if(!list) return;
-
-const snapshot=await getDocs(collection(db,"gallery"));
-
-let html="";
-
-snapshot.forEach(item=>{
-
-const data=item.data();
-
-html += `
-
-<div class="admin-item">
-
-<div>
-
-<img src="${data.image}" width="120">
-
-<p>${data.title}</p>
-
-</div>
-
-<div class="admin-actions">
-
-<button class="edit-btn"
-onclick="editGallery('${item.id}')">
-Edit
-</button>
-
-<button class="delete-btn"
-onclick="deleteGallery('${item.id}')">
-Delete
-</button>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-list.innerHTML=html;
-
-}
-
-loadGallery();
-async function deleteGallery(id){
-
-if(!confirm("શું તમે આ ફોટો કાઢી નાખવા માંગો છો?")){
-return;
-}
-
-await deleteDoc(doc(db,"gallery",id));
-
-loadGallery();
-refreshDashboard();
-
-alert("ફોટો સફળતાપૂર્વક કાઢી નાખવામાં આવ્યો.");
-
-}
-
-window.deleteGallery = deleteGallery;
-
-
-async function editGallery(id){
-
-const galleryRef = doc(db,"gallery",id);
-
-const gallerySnap = await getDoc(galleryRef);
-
-if(!gallerySnap.exists()) return;
-
-const data = gallerySnap.data();
-
-const newTitle = prompt("નવું શીર્ષક દાખલ કરો", data.title);
-if(newTitle===null) return;
-
-const newImage = prompt("નવી Image URL દાખલ કરો", data.image);
-if(newImage===null) return;
-
-await updateDoc(galleryRef,{
-title:newTitle,
-image:newImage
-});
-
-alert("ફોટો સફળતાપૂર્વક સુધારાયો.");
-
-loadGallery();
-refreshDashboard();
-
-}
-
-window.editGallery = editGallery;
 /*=========================================
-VIDEO GALLERY
+  LOAD GALLERY
 =========================================*/
 
-const videoForm=document.getElementById("videoForm");
+async function loadGallery() {
 
-videoForm?.addEventListener("submit",async(e)=>{
+  const list =
+    document.getElementById("galleryList");
 
-e.preventDefault();
+  if (!list) return;
 
-await addDoc(collection(db,"videos"),{
 
-title:document.getElementById("videoTitle").value,
+  try {
 
-url:document.getElementById("videoUrl").value,
+    const snapshot =
+      await getDocs(
+        collection(db, "gallery")
+      );
 
-createdAt:serverTimestamp()
 
-});
+    let html = "";
 
-alert("વિડિયો સફળતાપૂર્વક ઉમેરાયો.");
 
-videoForm.reset();
+    snapshot.forEach((item) => {
 
-loadVideos();
+      const data =
+        item.data();
 
-});
 
-async function loadVideos(){
+      html += `
 
-const list=document.getElementById("videoList");
+        <div
+          class="admin-item"
+          style="
+            display:flex;
+            gap:15px;
+            align-items:center;
+            margin-bottom:15px;
+            padding:15px;
+            border:1px solid #ddd;
+            border-radius:10px;
+            background:#fff;
+          "
+        >
 
-if(!list) return;
+          <div>
 
-const snapshot=await getDocs(collection(db,"videos"));
+            <img
+              src="${data.image || ""}"
+              width="120"
+              height="80"
+              style="
+                object-fit:cover;
+                border-radius:8px;
+              "
+            >
 
-let html="";
+          </div>
 
-snapshot.forEach(item=>{
 
-const data=item.data();
+          <div style="flex:1;">
 
-html+=`
+            <h3>
+              📁 ${data.album || "Album"}
+            </h3>
 
-<div class="admin-item">
+            <p>
+              🎉 <b>Event:</b>
+              ${data.eventName || "-"}
+            </p>
 
-<p>${data.title}</p>
+            <p>
+              📅 <b>Date:</b>
+              ${data.eventDate || "-"}
+            </p>
 
-<a href="${data.url}" target="_blank">
+          </div>
 
-વિડિયો જુઓ
 
-</a>
+          <div class="admin-actions">
 
-</div>
+            <button
+              class="edit-btn"
+              type="button"
+              onclick="
+                editGallery('${item.id}')
+              "
+            >
+              ✏️ Edit
+            </button>
 
-`;
 
-});
+            <button
+              class="delete-btn"
+              type="button"
+              onclick="
+                deleteGallery('${item.id}')
+              "
+            >
+              🗑️ Delete
+            </button>
 
-list.innerHTML=html;
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
+
+    list.innerHTML =
+      html ||
+      "<p>હાલ કોઈ ફોટો ઉપલબ્ધ નથી.</p>";
+
+
+  } catch (error) {
+
+    console.error(
+      "Gallery Load Error:",
+      error
+    );
+
+    list.innerHTML =
+      "<p>❌ Gallery લોડ કરવામાં ભૂલ આવી.</p>";
+
+  }
 
 }
+
+
+loadGallery();
+
+
+/*=========================================
+  DELETE GALLERY PHOTO
+=========================================*/
+
+async function deleteGallery(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ ફોટો Delete કરવા માંગો છો?"
+    );
+
+
+  if (!ok) return;
+
+
+  try {
+
+    await deleteDoc(
+      doc(db, "gallery", id)
+    );
+
+
+    alert(
+      "🗑️ ફોટો સફળતાપૂર્વક Delete થઈ ગયો."
+    );
+
+
+    loadGallery();
+
+    refreshDashboard();
+
+
+  } catch (error) {
+
+    console.error(
+      "Gallery Delete Error:",
+      error
+    );
+
+    alert(
+      "❌ ફોટો Delete કરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+
+  }
+
+}
+
+
+window.deleteGallery =
+  deleteGallery;
+
+
+/*=========================================
+  EDIT GALLERY PHOTO
+=========================================*/
+
+async function editGallery(id) {
+
+  try {
+
+    const galleryRef =
+      doc(db, "gallery", id);
+
+
+    const gallerySnap =
+      await getDoc(galleryRef);
+
+
+    if (!gallerySnap.exists()) {
+
+      alert(
+        "❌ ફોટો મળ્યો નથી."
+      );
+
+      return;
+
+    }
+
+
+    const data =
+      gallerySnap.data();
+
+
+    /* ------------------------------------
+       ALBUM
+    ------------------------------------ */
+
+    const newAlbum =
+      prompt(
+        "📁 Album Name:",
+        data.album || ""
+      );
+
+
+    if (newAlbum === null) {
+      return;
+    }
+
+
+    /* ------------------------------------
+       EVENT NAME
+    ------------------------------------ */
+
+    const newEventName =
+      prompt(
+        "🎉 Event Name:",
+        data.eventName || ""
+      );
+
+
+    if (newEventName === null) {
+      return;
+    }
+
+
+    /* ------------------------------------
+       EVENT DATE
+    ------------------------------------ */
+
+    const newEventDate =
+      prompt(
+        "📅 Event Date:",
+        data.eventDate || ""
+      );
+
+
+    if (newEventDate === null) {
+      return;
+    }
+
+
+    /* ------------------------------------
+       UPDATE
+    ------------------------------------ */
+
+    await updateDoc(
+      galleryRef,
+      {
+
+        album:
+          newAlbum.trim(),
+
+        eventName:
+          newEventName.trim(),
+
+        eventDate:
+          newEventDate.trim(),
+
+        updatedAt:
+          serverTimestamp()
+
+      }
+    );
+
+
+    alert(
+      "✅ Gallery માહિતી સફળતાપૂર્વક Update થઈ."
+    );
+
+
+    loadGallery();
+
+
+  } catch (error) {
+
+    console.error(
+      "Gallery Edit Error:",
+      error
+    );
+
+    alert(
+      "❌ Gallery Edit કરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+
+  }
+
+}
+
+
+window.editGallery =
+  editGallery;
+
+/*=========================================
+  VIDEO GALLERY
+=========================================*/
+
+const videoForm =
+  document.getElementById("videoForm");
+
+videoForm?.addEventListener("submit", async (e) => {
+
+  e.preventDefault();
+
+  try {
+
+    await addDoc(
+      collection(db, "videos"),
+      {
+        title:
+          document.getElementById("videoTitle").value.trim(),
+
+        url:
+          document.getElementById("videoUrl").value.trim(),
+
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    alert("વિડિયો સફળતાપૂર્વક ઉમેરાયો.");
+
+    videoForm.reset();
+
+    loadVideos();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "વિડિયો ઉમેરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+});
+
+
+/*=========================================
+  LOAD VIDEOS
+=========================================*/
+
+async function loadVideos() {
+
+  const list =
+    document.getElementById("videoList");
+
+  if (!list) return;
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "videos")
+      );
+
+    let html = "";
+
+    snapshot.forEach((item) => {
+
+      const data = item.data();
+
+      html += `
+
+        <div class="admin-item">
+
+          <p>
+            <b>${data.title || "વિડિયો"}</b>
+          </p>
+
+          <a
+            href="${data.url}"
+            target="_blank">
+            ▶️ વિડિયો જુઓ
+          </a>
+
+          <div style="margin-top:10px;">
+
+            <button
+              onclick="editVideo('${item.id}')">
+              ✏️ Edit
+            </button>
+
+            <button
+              onclick="deleteVideo('${item.id}')">
+              🗑️ Delete
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
+    list.innerHTML =
+      html ||
+      "હાલ કોઈ વિડિયો ઉપલબ્ધ નથી.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "❌ વિડિયો લોડ કરવામાં ભૂલ આવી.";
+
+  }
+
+}
+
+
+/*=========================================
+  EDIT VIDEO
+=========================================*/
+
+async function editVideo(id) {
+
+  try {
+
+    const snap =
+      await getDoc(
+        doc(db, "videos", id)
+      );
+
+    if (!snap.exists()) {
+
+      alert("વિડિયો મળ્યો નથી.");
+
+      return;
+
+    }
+
+    const data = snap.data();
+
+    const newTitle =
+      prompt(
+        "વિડિયોનું નામ:",
+        data.title || ""
+      );
+
+    if (newTitle === null) return;
+
+    const newUrl =
+      prompt(
+        "વિડિયો URL:",
+        data.url || ""
+      );
+
+    if (newUrl === null) return;
+
+    await updateDoc(
+      doc(db, "videos", id),
+      {
+        title: newTitle.trim(),
+        url: newUrl.trim()
+      }
+    );
+
+    alert(
+      "✅ વિડિયો સફળતાપૂર્વક Update થયો."
+    );
+
+    loadVideos();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Edit કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.editVideo = editVideo;
+
+
+/*=========================================
+  DELETE VIDEO
+=========================================*/
+
+async function deleteVideo(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું આ વિડિયો Delete કરવો છે?"
+    );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "videos", id)
+    );
+
+    alert(
+      "🗑️ વિડિયો Delete થઈ ગયો."
+    );
+
+    loadVideos();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteVideo = deleteVideo;
+
 
 loadVideos();
 /*=========================================
@@ -1131,318 +1837,1701 @@ refreshDashboard();
 
 window.editGramSabha = editGramSabha;
 /*=========================================
-RESOLUTIONS
+  RESOLUTIONS
 =========================================*/
 
-const resolutionForm = document.getElementById("resolutionForm");
+const resolutionForm =
+  document.getElementById("resolutionForm");
 
-resolutionForm?.addEventListener("submit", async (e) => {
 
-  e.preventDefault();
+resolutionForm?.addEventListener(
+  "submit",
+  async (e) => {
+
+    e.preventDefault();
+
+    try {
+
+      const title =
+        document
+          .getElementById("resolutionTitle")
+          .value.trim();
+
+      const description =
+        document
+          .getElementById("resolutionDescription")
+          .value.trim();
+
+      const fileInput =
+        document.getElementById("resolutionFile");
+
+
+      if (!title) {
+
+        alert("ઠરાવનું શીર્ષક લખો.");
+
+        return;
+
+      }
+
+
+      if (
+        !fileInput ||
+        fileInput.files.length === 0
+      ) {
+
+        alert("કૃપા કરીને PDF પસંદ કરો.");
+
+        return;
+
+      }
+
+
+      const pdfUrl =
+        await uploadToSupabase(
+          fileInput.files[0]
+        );
+
+
+      if (!pdfUrl) {
+
+        throw new Error(
+          "PDF Upload Failed"
+        );
+
+      }
+
+
+      await addDoc(
+        collection(db, "resolutions"),
+        {
+
+          title: title,
+
+          description: description,
+
+          file: pdfUrl,
+
+          createdAt:
+            serverTimestamp()
+
+        }
+      );
+
+
+      alert(
+        "✅ ઠરાવ સફળતાપૂર્વક ઉમેરાયો."
+      );
+
+
+      resolutionForm.reset();
+
+      loadResolutions();
+
+      refreshDashboard();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "ઠરાવ ઉમેરવામાં ભૂલ: " +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+/*=========================================
+  LOAD RESOLUTIONS
+=========================================*/
+
+async function loadResolutions() {
+
+  const list =
+    document.getElementById(
+      "resolutionList"
+    );
+
+  if (!list) return;
 
   try {
 
-    let pdfUrl = "";
+    const snapshot =
+      await getDocs(
+        collection(db, "resolutions")
+      );
 
-    const fileInput = document.getElementById("resolutionFile");
+    let html = "";
 
-    if (fileInput.files.length > 0) {
-      pdfUrl = await uploadToSupabase(fileInput.files[0]);
-    }
 
-    if (!pdfUrl) {
-      throw new Error("PDF Upload Failed");
-    }
+    snapshot.forEach((item) => {
 
-    await addDoc(collection(db, "resolutions"), {
-      title: document.getElementById("resolutionTitle").value,
-      description: document.getElementById("resolutionDescription").value,
-      file: pdfUrl,
-      createdAt: serverTimestamp()
+      const data =
+        item.data();
+
+
+      html += `
+
+        <div class="admin-item">
+
+          <div>
+
+            <h3>
+              📜 ${data.title || "-"}
+            </h3>
+
+            <p>
+              ${data.description || ""}
+            </p>
+
+            <a
+              href="${data.file}"
+              target="_blank"
+              rel="noopener">
+
+              📄 PDF જુઓ
+
+            </a>
+
+          </div>
+
+
+          <div class="admin-actions">
+
+            <button
+              type="button"
+              onclick="
+                editResolution('${item.id}')
+              ">
+
+              ✏️ Edit
+
+            </button>
+
+
+            <button
+              type="button"
+              class="delete-btn"
+              onclick="
+                deleteResolution('${item.id}')
+              ">
+
+              🗑️ Delete
+
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
     });
 
-    alert("ઠરાવ સફળતાપૂર્વક ઉમેરાયો.");
 
-    resolutionForm.reset();
+    list.innerHTML =
+      html ||
+      "<p>હાલ કોઈ ઠરાવ ઉપલબ્ધ નથી.</p>";
 
-    loadResolutions();
 
   } catch (error) {
 
     console.error(error);
 
-    alert(error.message);
+    list.innerHTML =
+      "<p>❌ ઠરાવો લોડ કરવામાં ભૂલ આવી.</p>";
 
   }
 
-});
+}
 
-async function loadResolutions(){
 
-const list=document.getElementById("resolutionList");
+/*=========================================
+  EDIT RESOLUTION
+=========================================*/
 
-if(!list) return;
+async function editResolution(id) {
 
-const snapshot=await getDocs(collection(db,"resolutions"));
+  try {
 
-let html="";
+    const resolutionRef =
+      doc(
+        db,
+        "resolutions",
+        id
+      );
 
-snapshot.forEach(item=>{
 
-const data=item.data();
+    const resolutionSnap =
+      await getDoc(
+        resolutionRef
+      );
 
-html+=`
 
-<div class="admin-item">
+    if (!resolutionSnap.exists()) {
 
-<h3>${data.title}</h3>
+      alert("ઠરાવ મળ્યો નથી.");
 
-<a href="${data.file}" target="_blank">
+      return;
 
-PDF જુઓ
+    }
 
-</a>
 
-</div>
+    const data =
+      resolutionSnap.data();
 
-`;
 
-});
+    const newTitle =
+      prompt(
+        "ઠરાવનું શીર્ષક:",
+        data.title || ""
+      );
 
-list.innerHTML=html;
+
+    if (newTitle === null) return;
+
+
+    const newDescription =
+      prompt(
+        "ઠરાવની વિગત:",
+        data.description || ""
+      );
+
+
+    if (newDescription === null) return;
+
+
+    const changeFile =
+      confirm(
+        "શું તમે PDF પણ બદલવા માંગો છો?"
+      );
+
+
+    let newFile =
+      data.file || "";
+
+
+    if (changeFile) {
+
+      const fileInput =
+        document.getElementById(
+          "resolutionFile"
+        );
+
+
+      if (
+        !fileInput ||
+        fileInput.files.length === 0
+      ) {
+
+        alert(
+          "કૃપા કરીને નવી PDF પસંદ કરો."
+        );
+
+        return;
+
+      }
+
+
+      newFile =
+        await uploadToSupabase(
+          fileInput.files[0]
+        );
+
+
+      if (!newFile) {
+
+        throw new Error(
+          "PDF Upload Failed"
+        );
+
+      }
+
+    }
+
+
+    await updateDoc(
+      resolutionRef,
+      {
+
+        title:
+          newTitle.trim(),
+
+        description:
+          newDescription.trim(),
+
+        file:
+          newFile,
+
+        updatedAt:
+          serverTimestamp()
+
+      }
+    );
+
+
+    alert(
+      "✅ ઠરાવ સફળતાપૂર્વક Update થયો."
+    );
+
+
+    const fileInput =
+      document.getElementById(
+        "resolutionFile"
+      );
+
+    if (fileInput) {
+
+      fileInput.value = "";
+
+    }
+
+
+    loadResolutions();
+
+    refreshDashboard();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Edit કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
 
 }
+
+
+window.editResolution =
+  editResolution;
+
+
+/*=========================================
+  DELETE RESOLUTION
+=========================================*/
+
+async function deleteResolution(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ ઠરાવ Delete કરવા માંગો છો?"
+    );
+
+
+  if (!ok) return;
+
+
+  try {
+
+    await deleteDoc(
+      doc(
+        db,
+        "resolutions",
+        id
+      )
+    );
+
+
+    alert(
+      "🗑️ ઠરાવ Delete થઈ ગયો."
+    );
+
+
+    loadResolutions();
+
+    refreshDashboard();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+
+window.deleteResolution =
+  deleteResolution;
+
+
+/*=========================================
+  LOAD RESOLUTIONS
+=========================================*/
 
 loadResolutions();
 
 /*=========================================
-DOCUMENTS
+  DOCUMENTS
 =========================================*/
 
-const documentForm = document.getElementById("documentForm");
+const documentForm =
+  document.getElementById("documentForm");
 
-documentForm?.addEventListener("submit", async (e) => {
 
-  e.preventDefault();
+documentForm?.addEventListener(
+  "submit",
+  async (e) => {
 
-  try {
+    e.preventDefault();
 
-    let documentUrl = "";
+    try {
 
-    const fileInput = document.getElementById("documentFile");
+      let documentUrl = "";
 
-    if (fileInput.files.length > 0) {
+      const fileInput =
+        document.getElementById(
+          "documentFile"
+        );
 
-      documentUrl = await uploadToSupabase(fileInput.files[0]);
+
+      if (
+        fileInput &&
+        fileInput.files.length > 0
+      ) {
+
+        documentUrl =
+          await uploadToSupabase(
+            fileInput.files[0]
+          );
+
+      }
+
+
+      if (!documentUrl) {
+
+        throw new Error(
+          "Supabase Upload Failed"
+        );
+
+      }
+
+
+      await addDoc(
+        collection(db, "documents"),
+        {
+
+          title:
+            document
+              .getElementById(
+                "documentTitle"
+              )
+              .value
+              .trim(),
+
+          file:
+            documentUrl,
+
+          createdAt:
+            serverTimestamp()
+
+        }
+      );
+
+
+      alert(
+        "✅ દસ્તાવેજ સફળતાપૂર્વક ઉમેરાયો."
+      );
+
+
+      documentForm.reset();
+
+      loadDocuments();
+
+      refreshDashboard();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "દસ્તાવેજ ઉમેરવામાં ભૂલ: " +
+        error.message
+      );
 
     }
 
-if (!documentUrl) {
-  throw new Error("Supabase Upload Failed");
-}
+  }
+);
 
-    await addDoc(collection(db, "documents"), {
 
-      title: document.getElementById("documentTitle").value,
+/*=========================================
+  LOAD DOCUMENTS
+=========================================*/
 
-      file: documentUrl,
+async function loadDocuments() {
 
-      createdAt: serverTimestamp()
+  const list =
+    document.getElementById(
+      "documentList"
+    );
+
+  if (!list) return;
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "documents")
+      );
+
+    let html = "";
+
+
+    snapshot.forEach((item) => {
+
+      const data =
+        item.data();
+
+
+      html += `
+
+        <div class="admin-item">
+
+          <div>
+
+            <h3>
+              📄 ${data.title || "-"}
+            </h3>
+
+            <a
+              href="${data.file}"
+              target="_blank"
+              rel="noopener">
+
+              📄 દસ્તાવેજ જુઓ
+
+            </a>
+
+          </div>
+
+
+          <div class="admin-actions">
+
+            <button
+              type="button"
+              onclick="
+                editDocument('${item.id}')
+              ">
+
+              ✏️ Edit
+
+            </button>
+
+
+            <button
+              type="button"
+              class="delete-btn"
+              onclick="
+                deleteDocument('${item.id}')
+              ">
+
+              🗑️ Delete
+
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
 
     });
 
-    alert("દસ્તાવેજ સફળતાપૂર્વક ઉમેરાયો.");
 
-    documentForm.reset();
+    list.innerHTML =
+      html ||
+      "<p>હાલ કોઈ દસ્તાવેજ ઉપલબ્ધ નથી.</p>";
 
-    const preview = document.getElementById("documentPreview");
-if (preview) {
-  preview.src = "";
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "<p>❌ દસ્તાવેજો લોડ કરવામાં ભૂલ આવી.</p>";
+
+  }
+
 }
+
+
+/*=========================================
+  EDIT DOCUMENT
+=========================================*/
+
+async function editDocument(id) {
+
+  try {
+
+    const documentRef =
+      doc(
+        db,
+        "documents",
+        id
+      );
+
+
+    const documentSnap =
+      await getDoc(
+        documentRef
+      );
+
+
+    if (!documentSnap.exists()) {
+
+      alert(
+        "દસ્તાવેજ મળ્યો નથી."
+      );
+
+      return;
+
+    }
+
+
+    const data =
+      documentSnap.data();
+
+
+    const newTitle =
+      prompt(
+        "દસ્તાવેજનું નામ:",
+        data.title || ""
+      );
+
+
+    if (newTitle === null) return;
+
+
+    const fileInput =
+      document.getElementById(
+        "documentFile"
+      );
+
+
+    const changeFile =
+      confirm(
+        "શું તમે PDF/Image પણ બદલવા માંગો છો?"
+      );
+
+
+    let newFile =
+      data.file || "";
+
+
+    if (changeFile) {
+
+      if (
+        !fileInput ||
+        fileInput.files.length === 0
+      ) {
+
+        alert(
+          "કૃપા કરીને નવી PDF/Image પસંદ કરો."
+        );
+
+        return;
+
+      }
+
+
+      newFile =
+        await uploadToSupabase(
+          fileInput.files[0]
+        );
+
+
+      if (!newFile) {
+
+        throw new Error(
+          "Supabase Upload Failed"
+        );
+
+      }
+
+    }
+
+
+    await updateDoc(
+      documentRef,
+      {
+
+        title:
+          newTitle.trim(),
+
+        file:
+          newFile,
+
+        updatedAt:
+          serverTimestamp()
+
+      }
+    );
+
+
+    alert(
+      "✅ દસ્તાવેજ સફળતાપૂર્વક Update થયો."
+    );
+
+
+    if (fileInput) {
+
+      fileInput.value = "";
+
+    }
+
 
     loadDocuments();
 
     refreshDashboard();
 
+
   } catch (error) {
 
     console.error(error);
 
-    alert("Error : " + error.message);
+    alert(
+      "Edit કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+
+window.editDocument =
+  editDocument;
+
+
+/*=========================================
+  DELETE DOCUMENT
+=========================================*/
+
+async function deleteDocument(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ દસ્તાવેજ કાઢી નાખવા માંગો છો?"
+    );
+
+
+  if (!ok) return;
+
+
+  try {
+
+    await deleteDoc(
+      doc(
+        db,
+        "documents",
+        id
+      )
+    );
+
+
+    alert(
+      "🗑️ દસ્તાવેજ સફળતાપૂર્વક કાઢી નાખવામાં આવ્યો."
+    );
+
+
+    loadDocuments();
+
+    refreshDashboard();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+
+window.deleteDocument =
+  deleteDocument;
+
+
+/*=========================================
+  LOAD DOCUMENTS
+=========================================*/
+
+loadDocuments();
+
+
+/*=========================================
+  GOVERNMENT SCHEMES
+=========================================*/
+
+const schemeForm =
+  document.getElementById("schemeForm");
+
+
+schemeForm?.addEventListener("submit", async (e) => {
+
+  e.preventDefault();
+
+  try {
+
+    await addDoc(
+      collection(db, "schemes"),
+      {
+
+        title:
+          document
+            .getElementById("schemeTitle")
+            .value.trim(),
+
+        description:
+          document
+            .getElementById("schemeDescription")
+            .value.trim(),
+
+        link:
+          document
+            .getElementById("schemeLink")
+            .value.trim(),
+
+        createdAt:
+          serverTimestamp()
+
+      }
+    );
+
+    alert("✅ યોજના સફળતાપૂર્વક ઉમેરાઈ.");
+
+    schemeForm.reset();
+
+    loadSchemes();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "યોજના ઉમેરવામાં ભૂલ આવી: " +
+      error.message
+    );
 
   }
 
 });
 
-async function loadDocuments() {
 
-  const list = document.getElementById("documentList");
+/*=========================================
+  LOAD SCHEMES
+=========================================*/
+
+async function loadSchemes() {
+
+  const list =
+    document.getElementById("schemeList");
 
   if (!list) return;
 
-  const snapshot = await getDocs(collection(db, "documents"));
+  try {
 
-  let html = "";
+    const snapshot =
+      await getDocs(
+        collection(db, "schemes")
+      );
 
-  snapshot.forEach(item => {
+    let html = "";
 
-    const data = item.data();
+    snapshot.forEach((item) => {
 
-    html += `
+      const data = item.data();
 
-<div class="admin-item">
+      html += `
 
-<div>
+        <div class="admin-item">
 
-<h3>${data.title}</h3>
+          <h3>
+            🏛️ ${data.title || "-"}
+          </h3>
 
-<a href="${data.file}" target="_blank">
-📄 દસ્તાવેજ જુઓ
-</a>
+          <p>
+            ${data.description || "-"}
+          </p>
 
-</div>
+          ${
+            data.link
+              ? `
+                <p>
+                  🔗
+                  <a
+                    href="${data.link}"
+                    target="_blank">
+                    વધુ માહિતી
+                  </a>
+                </p>
+              `
+              : ""
+          }
 
-<div class="admin-actions">
+          <div style="margin-top:10px;">
 
-<button class="delete-btn"
-onclick="deleteDocument('${item.id}')">
-Delete
-</button>
+            <button
+              onclick="editScheme('${item.id}')">
+              ✏️ Edit
+            </button>
 
-</div>
+            <button
+              onclick="deleteScheme('${item.id}')">
+              🗑️ Delete
+            </button>
 
-</div>
+          </div>
 
-`;
+        </div>
+
+      `;
+
+    });
+
+    list.innerHTML =
+      html ||
+      "હાલ કોઈ સરકારી યોજના ઉપલબ્ધ નથી.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "❌ યોજનાઓ લોડ કરવામાં ભૂલ આવી.";
+
+  }
+
+}
+
+
+/*=========================================
+  EDIT SCHEME
+=========================================*/
+
+async function editScheme(id) {
+
+  try {
+
+    const schemeRef =
+      doc(db, "schemes", id);
+
+    const schemeSnap =
+      await getDoc(schemeRef);
+
+    if (!schemeSnap.exists()) {
+
+      alert("યોજના મળી નથી.");
+
+      return;
+
+    }
+
+    const data =
+      schemeSnap.data();
+
+
+    const newTitle =
+      prompt(
+        "યોજનાનું નામ:",
+        data.title || ""
+      );
+
+    if (newTitle === null) return;
+
+
+    const newDescription =
+      prompt(
+        "યોજનાની વિગત:",
+        data.description || ""
+      );
+
+    if (newDescription === null) return;
+
+
+    const newLink =
+      prompt(
+        "વધુ માહિતી માટે Link:",
+        data.link || ""
+      );
+
+    if (newLink === null) return;
+
+
+    await updateDoc(
+      schemeRef,
+      {
+
+        title:
+          newTitle.trim(),
+
+        description:
+          newDescription.trim(),
+
+        link:
+          newLink.trim()
+
+      }
+    );
+
+
+    alert(
+      "✅ યોજના સફળતાપૂર્વક Update થઈ."
+    );
+
+    loadSchemes();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Edit કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.editScheme =
+  editScheme;
+
+
+/*=========================================
+  DELETE SCHEME
+=========================================*/
+
+async function deleteScheme(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ યોજના Delete કરવા માંગો છો?"
+    );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "schemes", id)
+    );
+
+    alert(
+      "🗑️ યોજના Delete થઈ ગઈ."
+    );
+
+    loadSchemes();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteScheme =
+  deleteScheme;
+
+
+loadSchemes();
+
+/*=========================================
+  VILLAGE EXTRA INFORMATION
+=========================================*/
+
+const villageExtraForm =
+  document.getElementById("villageExtraForm");
+
+
+villageExtraForm?.addEventListener("submit", async (e) => {
+
+  e.preventDefault();
+
+  try {
+
+    await addDoc(
+      collection(db, "villageExtra"),
+      {
+        title:
+          document
+            .getElementById("villageExtraTitle")
+            .value.trim(),
+
+        description:
+          document
+            .getElementById("villageExtraDescription")
+            .value.trim(),
+
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    alert("✅ ગામની માહિતી સફળતાપૂર્વક ઉમેરાઈ.");
+
+    villageExtraForm.reset();
+
+    loadVillageExtra();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "માહિતી ઉમેરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+});
+
+
+/*=========================================
+  LOAD VILLAGE EXTRA INFORMATION
+=========================================*/
+
+async function loadVillageExtra() {
+
+  const list =
+    document.getElementById("villageExtraList");
+
+  if (!list) return;
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "villageExtra")
+      );
+
+    let html = "";
+
+    snapshot.forEach((item) => {
+
+      const data = item.data();
+
+      html += `
+
+        <div class="admin-item">
+
+          <h3>
+            ${data.title || "-"}
+          </h3>
+
+          <p>
+            ${data.description || "-"}
+          </p>
+
+          <div style="margin-top:10px;">
+
+            <button
+              onclick="editVillageExtra('${item.id}')">
+              ✏️ Edit
+            </button>
+
+            <button
+              onclick="deleteVillageExtra('${item.id}')">
+              🗑️ Delete
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
+    list.innerHTML =
+      html ||
+      "હાલ કોઈ વધારાની માહિતી નથી.";
+
+  } catch (error) {
+
+    console.error(error);
+
+    list.innerHTML =
+      "❌ માહિતી લોડ કરવામાં ભૂલ આવી.";
+
+  }
+
+}
+
+
+/*=========================================
+  EDIT VILLAGE EXTRA - POPUP
+=========================================*/
+
+let editingVillageExtraId = null;
+
+
+async function editVillageExtra(id) {
+
+  try {
+
+    const snap =
+      await getDoc(
+        doc(db, "villageExtra", id)
+      );
+
+    if (!snap.exists()) {
+
+      alert("માહિતી મળી નથી.");
+      return;
+
+    }
+
+    const data = snap.data();
+
+    editingVillageExtraId = id;
+
+    document.getElementById(
+      "editVillageExtraTitle"
+    ).value = data.title || "";
+
+    document.getElementById(
+      "editVillageExtraDescription"
+    ).value = data.description || "";
+
+    const popup =
+      document.getElementById(
+        "villageExtraEditPopup"
+      );
+
+    popup.style.display = "flex";
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Edit કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+
+window.editVillageExtra =
+  editVillageExtra;
+
+
+/*=========================================
+  UPDATE VILLAGE EXTRA
+=========================================*/
+
+document
+  .getElementById("updateVillageExtraBtn")
+  ?.addEventListener("click", async () => {
+
+    if (!editingVillageExtraId) return;
+
+    const title =
+      document
+        .getElementById("editVillageExtraTitle")
+        .value.trim();
+
+    const description =
+      document
+        .getElementById("editVillageExtraDescription")
+        .value.trim();
+
+    if (!title || !description) {
+
+      alert(
+        "⚠️ શીર્ષક અને વિગત બંને ભરવા જરૂરી છે."
+      );
+
+      return;
+
+    }
+
+    try {
+
+      await updateDoc(
+        doc(
+          db,
+          "villageExtra",
+          editingVillageExtraId
+        ),
+        {
+          title: title,
+          description: description,
+          updatedAt: serverTimestamp()
+        }
+      );
+
+      alert(
+        "✅ માહિતી સફળતાપૂર્વક Update થઈ."
+      );
+
+      closeVillageExtraEdit();
+
+      loadVillageExtra();
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Update કરવામાં ભૂલ આવી: " +
+        error.message
+      );
+
+    }
 
   });
 
-  list.innerHTML = html;
-
-}
-
-loadDocuments();
-
-async function deleteDocument(id){
-
-if(!confirm("શું તમે આ દસ્તાવેજ કાઢી નાખવા માંગો છો?")){
-return;
-}
-
-await deleteDoc(doc(db,"documents",id));
-
-alert("દસ્તાવેજ સફળતાપૂર્વક કાઢી નાખવામાં આવ્યો.");
-
-loadDocuments();
-
-refreshDashboard();
-
-}
-
-window.deleteDocument = deleteDocument;
 
 /*=========================================
-SCHEMES
+  CLOSE EDIT POPUP
 =========================================*/
 
-const schemeForm=document.getElementById("schemeForm");
+function closeVillageExtraEdit() {
 
-schemeForm?.addEventListener("submit",async(e)=>{
+  const popup =
+    document.getElementById(
+      "villageExtraEditPopup"
+    );
 
-e.preventDefault();
+  if (popup) {
 
-await addDoc(collection(db,"schemes"),{
+    popup.style.display = "none";
 
-title:document.getElementById("schemeTitle").value,
+  }
 
-description:document.getElementById("schemeDescription").value,
-
-createdAt:serverTimestamp()
-
-});
-
-alert("યોજના ઉમેરાઈ.");
-
-schemeForm.reset();
-
-loadSchemes();
-
-});
-
-async function loadSchemes(){
-
-const list=document.getElementById("schemeList");
-
-if(!list) return;
-
-const snapshot=await getDocs(collection(db,"schemes"));
-
-let html="";
-
-snapshot.forEach(item=>{
-
-const data=item.data();
-
-html+=`
-
-<div class="admin-item">
-
-<h3>${data.title}</h3>
-
-<p>${data.desc}</p>
-
-</div>
-
-`;
-
-});
-
-list.innerHTML=html;
+  editingVillageExtraId = null;
 
 }
 
-loadSchemes();
+window.closeVillageExtraEdit =
+  closeVillageExtraEdit;
+
+
+
 /*=========================================
-COMPLAINTS
+  DELETE VILLAGE EXTRA
+=========================================*/
+
+async function deleteVillageExtra(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું આ ગામની માહિતી Delete કરવી છે?"
+    );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "villageExtra", id)
+    );
+
+    alert("🗑️ માહિતી Delete થઈ ગઈ.");
+
+    loadVillageExtra();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteVillageExtra =
+  deleteVillageExtra;
+
+
+loadVillageExtra();
+
+/*=========================================
+  COMPLAINTS
 =========================================*/
 
 async function loadComplaints() {
 
-const list = document.getElementById("complaintList");
+  const list =
+    document.getElementById("complaintList");
 
-if (!list) return;
+  if (!list) return;
 
-const snapshot = await getDocs(collection(db, "complaints"));
+  try {
 
-let html = "";
+    const snapshot =
+      await getDocs(
+        collection(db, "complaints")
+      );
 
-snapshot.forEach(item => {
+    let html = "";
 
-const data = item.data();
+    snapshot.forEach((item) => {
 
-html += `
+      const data = item.data();
 
-<div class="admin-item">
+      const status =
+        data.status || "Pending";
 
-<h3>${data.name}</h3>
+      html += `
 
-<p><b>મોબાઇલ :</b> ${data.mobile}</p>
+        <div class="admin-item">
 
-<p><b>વિષય :</b> ${data.subject}</p>
+          <h3>
+            📝 ${data.name || "-"}
+          </h3>
 
-<p>${data.details}</p>
+          <p>
+            <b>મોબાઇલ :</b>
+            ${data.mobile || "-"}
+          </p>
 
-<p><b>Status :</b> ${data.status}</p>
+          <p>
+            <b>વિષય :</b>
+            ${data.subject || "-"}
+          </p>
 
-</div>
+          <p>
+            <b>ફરિયાદ :</b>
+            ${data.details || "-"}
+          </p>
 
-`;
+          <p>
+            <b>Status :</b>
+            ${status}
+          </p>
 
-});
 
-list.innerHTML = html;
+          <!-- STATUS BUTTONS -->
+
+          <div
+            style="
+              display:flex;
+              flex-wrap:wrap;
+              gap:8px;
+              margin-top:12px;
+            ">
+
+            <button
+              type="button"
+              onclick="
+                updateComplaintStatus(
+                  '${item.id}',
+                  'Pending'
+                )
+              ">
+
+              🟡 Pending
+
+            </button>
+
+
+            <button
+              type="button"
+              onclick="
+                updateComplaintStatus(
+                  '${item.id}',
+                  'તપાસમાં'
+                )
+              ">
+
+              🔵 તપાસમાં
+
+            </button>
+
+
+            <button
+              type="button"
+              onclick="
+                updateComplaintStatus(
+                  '${item.id}',
+                  'ઉકેલાઈ'
+                )
+              ">
+
+              🟢 ઉકેલાઈ
+
+            </button>
+
+
+            <button
+              type="button"
+              onclick="
+                updateComplaintStatus(
+                  '${item.id}',
+                  'Reject'
+                )
+              ">
+
+              🔴 Reject
+
+            </button>
+
+
+            <button
+              type="button"
+              class="delete-btn"
+              onclick="
+                deleteComplaint(
+                  '${item.id}'
+                )
+              ">
+
+              🗑️ Delete
+
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    });
+
+
+    list.innerHTML =
+      html ||
+      "<p>હાલ કોઈ ફરિયાદ ઉપલબ્ધ નથી.</p>";
+
+  } catch (error) {
+
+    console.error(
+      "Complaints load error:",
+      error
+    );
+
+    list.innerHTML =
+      "<p>❌ ફરિયાદો લોડ કરવામાં ભૂલ આવી.</p>";
+
+  }
 
 }
+
+
+/*=========================================
+  UPDATE COMPLAINT STATUS
+=========================================*/
+
+async function updateComplaintStatus(
+  id,
+  newStatus
+) {
+
+  try {
+
+    await updateDoc(
+      doc(db, "complaints", id),
+      {
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      }
+    );
+
+    alert(
+      "✅ ફરિયાદનો Status Update થઈ ગયો."
+    );
+
+    loadComplaints();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "Status Update કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.updateComplaintStatus =
+  updateComplaintStatus;
+
+
+/*=========================================
+  DELETE COMPLAINT
+=========================================*/
+
+async function deleteComplaint(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ ફરિયાદ Delete કરવા માંગો છો?"
+    );
+
+  if (!ok) return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "complaints", id)
+    );
+
+    alert(
+      "🗑️ ફરિયાદ Delete થઈ ગઈ."
+    );
+
+    loadComplaints();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "ફરિયાદ Delete કરવામાં ભૂલ આવી: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.deleteComplaint =
+  deleteComplaint;
+
+
+/*=========================================
+  LOAD COMPLAINTS
+=========================================*/
 
 loadComplaints();
 
@@ -1490,17 +3579,50 @@ const propertyData = {
 
   propertyNo: propertyNo,
 
-  houseNo: document.getElementById("houseNo").value.trim(),
+  houseNo:
+    document.getElementById("houseNo").value.trim(),
 
-  ownerName: document.getElementById("ownerName").value.trim(),
+  ownerName:
+    document.getElementById("ownerName").value.trim(),
 
-  ownerMobile: document.getElementById("ownerMobile").value.trim(),
+  ownerMobile:
+    document.getElementById("ownerMobile").value.trim(),
 
-  taxAmount: Number(document.getElementById("taxAmount").value),
+  previousDue:
+    Number(
+      document.getElementById("previousDue").value || 0
+    ),
 
-  taxYear: document.getElementById("taxYear").value,
+  houseTax:
+    Number(
+      document.getElementById("houseTax").value || 0
+    ),
 
-  lastDate: document.getElementById("lastDate").value,
+  waterTax:
+    Number(
+      document.getElementById("waterTax").value || 0
+    ),
+
+  cleaningTax:
+    Number(
+      document.getElementById("cleaningTax").value || 0
+    ),
+
+  drainageTax:
+    Number(
+      document.getElementById("drainageTax").value || 0
+    ),
+
+  otherTax:
+    Number(
+      document.getElementById("otherTax").value || 0
+    ),
+
+  taxYear:
+    document.getElementById("taxYear").value,
+
+  lastDate:
+    document.getElementById("lastDate").value,
 
   qr: qrUrl
 
@@ -1555,78 +3677,290 @@ LOAD PROPERTY TAX
 
 async function loadPropertyTax(){
 
-  const snapshot = await getDocs(collection(db,"propertyTax"));
+  const snapshot = await getDocs(
+    collection(db, "propertyTax")
+  );
 
   let html = "";
 
-  snapshot.forEach((docSnap)=>{
+  snapshot.forEach((docSnap) => {
 
     const data = docSnap.data();
 
     html += `
-    <div class="admin-item">
+      <div class="admin-item">
 
-      <div>
+        <div>
 
-        <h3>🏠 ${data.ownerName}</h3>
+          <h3>🏠 ${data.ownerName || "-"}</h3>
 
-        <p><b>મિલકત નંબર :</b> ${data.propertyNo}</p>
+          <p>
+            <b>મિલકત નંબર :</b>
+            ${data.propertyNo || "-"}
+          </p>
 
-        <p><b>ઘર નંબર :</b> ${data.houseNo}</p>
+          <p>
+            <b>ઘર નંબર :</b>
+            ${data.houseNo || "-"}
+          </p>
 
-        <p><b>મોબાઇલ :</b> ${data.ownerMobile}</p>
+          <p>
+            <b>મોબાઇલ :</b>
+            ${data.mobile || "-"}
+          </p>
 
-        <p><b>વેરો :</b> ₹ ${data.taxAmount}</p>
+          <p>
+            <b>વેરો :</b>
+            ₹ ${data.taxAmount || 0}
+          </p>
 
-        <p><b>વર્ષ :</b> ${data.taxYear}</p>
+          <p>
+            <b>વર્ષ :</b>
+            ${data.taxYear || "-"}
+          </p>
 
-        <p><b>છેલ્લી તારીખ :</b> ${data.lastDate}</p>
+          <p>
+            <b>છેલ્લી તારીખ :</b>
+            ${data.lastDate || "-"}
+          </p>
+
+        </div>
+
+        <div class="admin-actions">
+
+          <button
+            type="button"
+            onclick="globalThis.editProperty('${docSnap.id}')">
+            ✏️ Edit
+          </button>
+
+          <button
+            type="button"
+            onclick="globalThis.viewPaymentHistory('${data.propertyNo || ""}')">
+            📜 History
+          </button>
+
+          <button
+            type="button"
+            class="delete-btn"
+            onclick="globalThis.deleteProperty('${docSnap.id}')">
+            🗑 Delete
+          </button>
+
+        </div>
 
       </div>
-
-      <div class="admin-actions">
-
-        <button type="button" onclick="globalThis.editProperty('${docSnap.id}')">
-✏️ Edit
-</button>
-
-<button type="button"
-onclick="globalThis.viewPaymentHistory('${data.propertyNo}')">
-📜 History
-</button>
-
-<button type="button" class="delete-btn"
-onclick="globalThis.deleteProperty('${docSnap.id}')">
-🗑 Delete
-</button>
-
-      </div>
-
-    </div>
     `;
-
   });
 
-  document.getElementById("propertyTaxList").innerHTML = html;
-document.getElementById("searchPropertyTax")
-?.addEventListener("keyup", function () {
+/*=========================================
+  TOTAL PROPERTY RECORD COUNTER
+=========================================*/
 
-  const value = this.value.toLowerCase();
+const totalPropertyRecords =
+  document.getElementById("totalPropertyRecords");
 
-  document.querySelectorAll("#propertyTaxList .admin-item")
-  .forEach(item => {
+if (totalPropertyRecords) {
 
-    item.style.display =
-      item.innerText.toLowerCase().includes(value)
-      ? "flex"
-      : "none";
+  totalPropertyRecords.innerHTML = `
+    📊 કુલ Property Records :
+    <b>${snapshot.size}</b>
+  `;
 
-  });
+}
+  /*=========================================
+     ALL PROPERTY DATA DISPLAY
+  =========================================*/
 
-});
+  const list =
+    document.getElementById("propertyTaxList");
+
+  if (list) {
+
+    list.innerHTML = html;
+
+  }
+
+
+  /*=========================================
+     SEARCH
+  =========================================*/
+
+  const search =
+    document.getElementById("searchPropertyTax");
+
+  if (search) {
+
+    search.onkeyup = function () {
+
+      const value =
+        this.value
+          .toLowerCase()
+          .trim();
+
+
+      document
+        .querySelectorAll(
+          "#propertyTaxList .admin-item"
+        )
+        .forEach(item => {
+
+          const text =
+            item.innerText.toLowerCase();
+
+
+          item.style.display =
+            text.includes(value)
+              ? "flex"
+              : "none";
+
+        });
+
+    };
+
+  }
+
+
+  console.log(
+    "PROPERTY TAX TOTAL:",
+    snapshot.size
+  );
+
 }
 
+
 loadPropertyTax();
+
+/* =========================================================
+   PROPERTY TAX - FULL IMPORT CHECK
+   Mobile Friendly
+   કશું DELETE કરતું નથી
+========================================================= */
+
+async function checkPropertyTaxImports() {
+
+  try {
+
+    const propertySnap = await getDocs(
+      collection(db, "propertyTax")
+    );
+
+    const importSnap = await getDocs(
+      collection(db, "propertyTaxImports")
+    );
+
+
+    let total = propertySnap.size;
+
+    let oldRecords = 0;
+
+    const actualExcelRecords = {};
+
+
+    /* =====================================================
+       PROPERTY RECORDS COUNT
+    ===================================================== */
+
+    propertySnap.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      if (!data.importId) {
+
+        oldRecords++;
+
+      } else {
+
+        const fileName =
+          data.importFileName ||
+          data.importId;
+
+        if (!actualExcelRecords[fileName]) {
+
+          actualExcelRecords[fileName] = 0;
+
+        }
+
+        actualExcelRecords[fileName]++;
+
+      }
+
+    });
+
+
+    /* =====================================================
+       IMPORT FILE INFORMATION
+    ===================================================== */
+
+    let importText = "";
+
+
+    importSnap.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      const fileName =
+        data.fileName || "Unknown Excel";
+
+      const actual =
+        actualExcelRecords[fileName] || 0;
+
+      const excelRows =
+        data.recordCount || 0;
+
+
+      importText +=
+        "📄 " + fileName + "\n" +
+        "Excel Records: " + excelRows + "\n" +
+        "Firestore Records: " + actual + "\n\n";
+
+    });
+
+
+    /* =====================================================
+       SHOW RESULT
+    ===================================================== */
+
+    const message =
+
+      "📊 PROPERTY TAX CHECK\n\n" +
+
+      "કુલ Property Records: " +
+      total + "\n\n" +
+
+      "જૂના Records: " +
+      oldRecords + "\n\n" +
+
+      "📂 Excel પ્રમાણે:\n\n" +
+
+      importText;
+
+
+    alert(message);
+
+
+    console.log(message);
+
+
+  } catch (error) {
+
+    console.error(
+      "PROPERTY CHECK ERROR:",
+      error
+    );
+
+    alert(
+      "❌ Check Error:\n" +
+      error.message
+    );
+
+  }
+
+}
+
+
+globalThis.checkPropertyTaxImports =
+  checkPropertyTaxImports;
 
 async function viewPaymentHistory(propertyNo){
 
@@ -1712,8 +4046,23 @@ console.log("Edit Click", id);
   document.getElementById("ownerMobile").value =
   data.ownerMobile || "";
 
-  document.getElementById("taxAmount").value =
-  data.taxAmount || "";
+  document.getElementById("previousDue").value =
+  data.previousDue || 0;
+
+document.getElementById("houseTax").value =
+  data.houseTax || 0;
+
+document.getElementById("waterTax").value =
+  data.waterTax || 0;
+
+document.getElementById("cleaningTax").value =
+  data.cleaningTax || 0;
+
+document.getElementById("drainageTax").value =
+  data.drainageTax || 0;
+
+document.getElementById("otherTax").value =
+  data.otherTax || 0;
 
   document.getElementById("taxYear").value =
   data.taxYear || "";
@@ -1859,9 +4208,9 @@ if (paymentDate) {
           ✅ Approve
         </button>
 
-        <button onclick="rejectPayment('${item.id}')">
-          ❌ Reject
-        </button>
+        <button onclick="rejectTaxPaymentFixed('${item.id}')">
+  ❌ Reject
+</button>
 
         <button class="delete-btn"
           onclick="deletePayment('${item.id}')">
@@ -1916,21 +4265,47 @@ loadTaxPayments();
 window.approvePayment = approvePayment;
 
 /*=========================================
-REJECT
+REJECT TAX PAYMENT
 =========================================*/
 
 async function rejectPayment(id){
 
-const ok = confirm("શું તમે આ ચુકવણી Delete કરવા માંગો છો?");
+  const ok = confirm(
+    "⚠️ શું તમે આ ચુકવણી Reject કરવા માંગો છો?"
+  );
 
-if(!ok) return;
+  if(!ok) return;
 
-await deleteDoc(doc(db,"taxPayments",id));
+  try {
 
-alert("ચુકવણી Delete થઈ ગઈ.");
+    await updateDoc(
+      doc(db, "taxPayments", id),
+      {
+        status: "Rejected",
+        rejectedAt: serverTimestamp()
+      }
+    );
 
-loadTaxPayments();
+    alert("❌ ચુકવણી Reject થઈ ગઈ.");
 
+    await loadTaxPayments();
+
+    if (typeof refreshDashboard === "function") {
+  await refreshDashboard();
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Tax Payment Reject Error:",
+      error
+    );
+
+    alert(
+      "❌ Reject કરવામાં ભૂલ:\n" +
+      error.message
+    );
+  }
 }
 
 window.rejectPayment = rejectPayment;
@@ -1989,6 +4364,396 @@ window.location.href = "login.html";
 });
 
 /*=========================================
+   CENTRAL ONLINE APPLICATIONS
+=========================================*/
+
+async function loadApplications() {
+
+  const list =
+    document.getElementById("applicationsList");
+
+  if (!list) return;
+
+  list.innerHTML = `
+    <tr>
+      <td colspan="9"
+          style="text-align:center;padding:20px;">
+        ⏳ અરજીઓ લોડ થઈ રહી છે...
+      </td>
+    </tr>
+  `;
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "applications")
+      );
+
+    const search =
+      document.getElementById(
+        "searchApplication"
+      )?.value
+      ?.trim()
+      .toLowerCase() || "";
+
+    const statusFilter =
+      document.getElementById(
+        "applicationStatusFilter"
+      )?.value || "";
+
+    const serviceFilter =
+      document.getElementById(
+        "applicationServiceFilter"
+      )?.value || "";
+
+    let html = "";
+
+    snapshot.forEach(item => {
+
+      const data = item.data();
+
+      const applicationNo =
+        data.applicationNo || "-";
+
+      const name =
+        data.propertyData?.applicantName ||
+        data.name ||
+        "-";
+
+      const mobile =
+        data.propertyData?.mobile ||
+        data.mobile ||
+        "-";
+
+      const propertyNo =
+        data.propertyData?.propertyNo ||
+        "-";
+
+      const status =
+        data.status || "Pending";
+
+
+      /* SEARCH */
+
+      const searchText = `
+        ${applicationNo}
+        ${name}
+        ${mobile}
+        ${propertyNo}
+      `.toLowerCase();
+
+      if (
+        search &&
+        !searchText.includes(search)
+      ) {
+        return;
+      }
+
+
+      /* STATUS FILTER */
+
+      if (
+        statusFilter &&
+        status !== statusFilter
+      ) {
+        return;
+      }
+
+
+      /* SERVICE FILTER */
+
+      if (
+        serviceFilter &&
+        data.service !== serviceFilter
+      ) {
+        return;
+      }
+
+
+      /* SERVICE NAME */
+
+      const serviceNames = {
+
+        birth:
+          "જન્મ પ્રમાણપત્ર",
+
+        death:
+          "મૃત્યુ પ્રમાણપત્ર",
+
+        income:
+          "આવક દાખલો",
+
+        residence:
+          "રહેઠાણ દાખલો",
+
+        property:
+          "મિલકત આકારણી",
+
+        tax:
+          "ટેક્સ",
+
+        complaint:
+          "ફરિયાદ"
+
+      };
+
+      const service =
+        serviceNames[data.service] ||
+        data.service ||
+        "-";
+
+
+      /* STATUS TEXT */
+
+      let statusText =
+        "🟡 Pending";
+
+      if (status === "Approved") {
+        statusText =
+          "🟢 Approved";
+      }
+
+      if (status === "Rejected") {
+        statusText =
+          "🔴 Rejected";
+      }
+
+
+      /* DOCUMENTS */
+
+      let docs = "-";
+
+      if (
+        Array.isArray(data.documents) &&
+        data.documents.length > 0
+      ) {
+
+        docs =
+          data.documents
+            .map(file => {
+
+              if (!file?.url) {
+                return "";
+              }
+
+              return `
+                <a
+                  href="${file.url}"
+                  target="_blank"
+                  rel="noopener noreferrer">
+
+                  📄 ${
+                    file.name ||
+                    "દસ્તાવેજ"
+                  }
+
+                </a>
+              `;
+
+            })
+            .join("<br>");
+
+      }
+
+
+      /* ROW */
+
+      html += `
+
+        <tr>
+
+          <td>
+            <b>${applicationNo}</b>
+          </td>
+
+          <td>
+            ${service}
+          </td>
+
+          <td>
+            ${name}
+          </td>
+
+          <td>
+            ${mobile}
+          </td>
+
+          <td>
+            ${propertyNo}
+          </td>
+
+          <td>
+            ${statusText}
+          </td>
+
+          <td>
+            ${docs}
+          </td>
+
+          <td>
+
+            <button
+              onclick="
+                viewApplication('${item.id}')
+              ">
+
+              👁 View
+
+            </button>
+
+            <button
+              onclick="
+                printApplication('${item.id}')
+              ">
+
+              🖨 Print
+
+            </button>
+
+          </td>
+
+          <td>
+
+            ${
+              status !== "Approved"
+                ? `
+                  <button
+                    onclick="
+                      updateApplicationStatus(
+                        '${item.id}',
+                        'Approved'
+                      )
+                    ">
+
+                    ✅
+
+                  </button>
+                `
+                : ""
+            }
+
+
+            ${
+              status !== "Rejected"
+                ? `
+                  <button
+                    onclick="
+                      updateApplicationStatus(
+                        '${item.id}',
+                        'Rejected'
+                      )
+                    ">
+
+                    ❌
+
+                  </button>
+                `
+                : ""
+            }
+
+
+            <button
+              onclick="
+                deleteApplication('${item.id}')
+              ">
+
+              🗑
+
+            </button>
+
+          </td>
+
+        </tr>
+
+      `;
+
+    });
+
+
+    if (!html) {
+
+      html = `
+        <tr>
+
+          <td
+            colspan="9"
+            style="
+              text-align:center;
+              padding:25px;
+            ">
+
+            📭 કોઈ અરજી મળી નથી.
+
+          </td>
+
+        </tr>
+      `;
+
+    }
+
+
+    list.innerHTML = html;
+
+
+  } catch (error) {
+
+    console.error(
+      "Application Load Error:",
+      error
+    );
+
+    list.innerHTML = `
+      <tr>
+
+        <td
+          colspan="9"
+          style="
+            text-align:center;
+            color:red;
+            padding:20px;
+          ">
+
+          ❌ અરજીઓ લોડ કરવામાં ભૂલ:
+
+          <br>
+
+          ${error.message}
+
+        </td>
+
+      </tr>
+    `;
+
+  }
+
+}
+
+loadApplications();
+
+window.loadApplications =
+  loadApplications;
+/*=========================================
+   SEARCH
+=========================================*/
+
+function searchApplications() {
+
+  loadApplications();
+
+}
+
+window.searchApplications =
+  searchApplications;
+
+
+/*=========================================
+   INITIAL LOAD
+=========================================*/
+
+loadApplications();
+
+/*=========================================
 FINAL INITIALIZATION
 =========================================*/
 
@@ -2002,107 +4767,141 @@ console.log("Firebase Connected Successfully");
 
 console.log("==================================");
 
+
+
 /*=========================================
-ONLINE APPLICATIONS
+   APPLICATION STATUS + HISTORY
 =========================================*/
 
-async function loadApplications() {
+async function updateApplicationStatus(id, status) {
 
-  const list = document.getElementById("applicationsList");
+  try {
 
-  if (!list) return;
+    let rejectionReason = "";
 
-  const snapshot = await getDocs(collection(db, "applications"));
+    /* REJECT REASON */
 
-  let html = "";
+    if (status === "Rejected") {
 
-  snapshot.forEach(item => {
+      rejectionReason =
+        prompt(
+          "❌ Reject કરવાનું કારણ લખો:"
+        );
 
-    const data = item.data();
+      if (
+        rejectionReason === null ||
+        !rejectionReason.trim()
+      ) {
 
-    let docs = "";
+        alert(
+          "⚠️ Reject કરવા માટે કારણ લખવું જરૂરી છે."
+        );
 
-    if (data.documents && data.documents.length > 0) {
+        return;
 
-      data.documents.forEach(file => {
-        docs += `<a href="${file.url}" target="_blank">${file.name}</a><br>`;
-      });
+      }
 
-    } else {
-
-      docs = "કોઈ દસ્તાવેજ નથી";
+      rejectionReason =
+        rejectionReason.trim();
 
     }
 
-    html += `
-    <tr>
-      <td>${data.applicationNo || "-"}</td>
-      <td>${
-{
-  birth:"જન્મ પ્રમાણપત્ર",
-  death:"મૃત્યુ પ્રમાણપત્ર",
-  income:"આવક દાખલો",
-  residence:"રહેઠાણ દાખલો",
-  property:"મિલકત આકારણી",
-  tax:"ટેક્સ",
-  complaint:"ફરિયાદ"
-}[data.service] || data.service
-}</td>
-      <td>${data.name}</td>
-      <td>${data.mobile}</td>
-      <td>
-  <span class="status ${data.status.toLowerCase()}">
-    ${data.status}
-  </span>
-</td>
-      <td>${docs}</td>
 
-    <td>
-  <button onclick="viewApplication('${item.id}')">
-    👁 View
-  </button>
+    /* APPROVE CONFIRMATION */
 
-  <button onclick="printApplication('${item.id}')">
-    🖨 Print
-  </button>
-</td>
+    if (status === "Approved") {
 
-      <td>
-        <button onclick="updateApplicationStatus('${item.id}','Approved')">
-          ✅
-        </button>
+      const ok =
+        confirm(
+          "શું તમે આ અરજી Approve કરવા માંગો છો?"
+        );
 
-        <button onclick="updateApplicationStatus('${item.id}','Rejected')">
-          ❌
-        </button>
+      if (!ok) return;
 
-        <button onclick="deleteApplication('${item.id}')">
-          🗑
-        </button>
-      </td>
-    </tr>
-    `;
+    }
 
-  });
 
-  list.innerHTML = html;
+    /* APPLICATION UPDATE */
+
+    const applicationRef =
+      doc(
+        db,
+        "applications",
+        id
+      );
+
+
+    await updateDoc(
+      applicationRef,
+      {
+
+        status: status,
+
+        rejectionReason:
+          rejectionReason,
+
+        updatedAt:
+          serverTimestamp()
+
+      }
+    );
+
+
+    /* STATUS HISTORY */
+
+    await addDoc(
+      collection(
+        db,
+        "applications",
+        id,
+        "history"
+      ),
+      {
+
+        status: status,
+
+        rejectionReason:
+          rejectionReason,
+
+        createdAt:
+          serverTimestamp()
+
+      }
+    );
+
+
+    alert(
+      status === "Approved"
+        ? "✅ અરજી Approved થઈ ગઈ."
+        : "❌ અરજી Rejected થઈ ગઈ."
+    );
+
+
+    /* REFRESH */
+
+    await loadApplications();
+
+
+  } catch (error) {
+
+    console.error(
+      "Application Status Error:",
+      error
+    );
+
+
+    alert(
+      "❌ Status update કરવામાં ભૂલ:\n" +
+      error.message
+    );
+
+  }
 
 }
 
-loadApplications();
-async function updateApplicationStatus(id, status) {
 
-  await updateDoc(doc(db, "applications", id), {
-    status: status
-  });
-
-  alert("Status Update થઈ ગયો.");
-
-  loadApplications();
-
-}
-
-window.updateApplicationStatus = updateApplicationStatus;
+window.updateApplicationStatus =
+  updateApplicationStatus;
 async function deleteApplication(id) {
 
   if (!confirm("શું અરજી કાઢી નાખવી છે?")) return;
@@ -2117,1709 +4916,472 @@ async function deleteApplication(id) {
 
 window.deleteApplication = deleteApplication;
 
-async function viewApplication(id){
+/*====================================================
+  CONTACT MANAGEMENT - FIXED
+====================================================*/
 
-  const docSnap = await getDoc(doc(db,"applications",id));
+const contactFormFixed =
+  document.getElementById("contactForm");
 
-  if(!docSnap.exists()){
-    alert("અરજી મળી નથી.");
-    return;
-  }
+contactFormFixed?.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  const data = docSnap.data();
+  const name =
+    document.getElementById("contactName")?.value.trim() || "";
 
-  alert(
-`અરજી નંબર: ${data.applicationNo || "-"}
+  const position =
+    document.getElementById("contactPosition")?.value.trim() || "";
 
-નામ: ${data.name}
+  const mobile =
+    document.getElementById("contactMobile")?.value.trim() || "";
 
-મોબાઇલ: ${data.mobile}
+  const email =
+    document.getElementById("contactEmail")?.value.trim() || "";
 
-સેવા: ${data.service}
-
-સ્થિતિ: ${data.status}`
-  );
-
-}
-
-window.viewApplication = viewApplication;
-
-function searchApplications(){
-
-  const input = document.getElementById("searchApplication").value.toLowerCase();
-
-  const items = document.querySelectorAll(".admin-item");
-
-  items.forEach(item=>{
-
-    if(item.innerText.toLowerCase().includes(input)){
-      item.style.display="block";
-    }else{
-      item.style.display="none";
-    }
-
-  });
-
-}
-
-window.searchApplications = searchApplications;
-
-async function printApplication(id) {
-
-  const docSnap = await getDoc(doc(db, "applications", id));
-
-  if (!docSnap.exists()) {
-    alert("અરજી મળી નથી.");
-    return;
-  }
-
-  const data = docSnap.data();
-
-  // Website Settings
-  const settingsSnap = await getDoc(doc(db, "website", "settings"));
-  const settings = settingsSnap.exists() ? settingsSnap.data() : {};
-
-  // Print Section માં માહિતી ભરો
-  document.getElementById("printWebsiteName").innerText =
-    settings.websiteName || "ગ્રામ પંચાયત";
-
-  document.getElementById("printAddress").innerText =
-    settings.panchayatAddress || "";
-
-  document.getElementById("printContact").innerText =
-    `મો. ${settings.panchayatMobile || ""} | Email: ${settings.panchayatEmail || ""}`;
-
-  document.getElementById("pApplicationNo").innerText =
-    data.applicationNo || "-";
-
-  document.getElementById("pName").innerText =
-    data.name || "-";
-
-  document.getElementById("pMobile").innerText =
-    data.mobile || "-";
-
-  document.getElementById("pService").innerText =
-    data.service || "-";
-
-  document.getElementById("pStatus").innerText =
-    data.status || "-";
-
-  if (settings.logo)
-    document.getElementById("printLogo").src = settings.logo;
-
-  if (settings.stampImage)
-    document.getElementById("printStamp").src = settings.stampImage;
-
-  if (settings.sarpanchSignature)
-    document.getElementById("printSignature").src = settings.sarpanchSignature;
-
-  document.getElementById("printSarpanch").innerText =
-    settings.sarpanchName || "";
-
-  // Print Section બતાવો
-  const printDiv = document.getElementById("printSection");
-  printDiv.style.display = "block";
-
-  // Image બનાવો
-  const canvas = await html2canvas(printDiv, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff"
-  });
-
-  // ફરી Hide કરો
-  printDiv.style.display = "none";
-
-  // PDF બનાવો
-  const { jsPDF } = window.jspdf;
-
-  const pdf = new jsPDF("p", "mm", "a4");
-
-  const imgData = canvas.toDataURL("image/png");
-
-  const pageWidth = 210;
-  const pageHeight = (canvas.height * pageWidth) / canvas.width;
-
-  pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-
-  pdf.save(`${data.applicationNo || "Application"}.pdf`);
-
-}
-
-window.printApplication = printApplication;
-
-document.getElementById("importTaxPdf")?.addEventListener("click", importPropertyTaxPdf);
-
-async function importPropertyTaxPdf(){
-
-const files =
-document.getElementById("taxPdfFiles").files;
-
-if(!files.length){
-
-alert("PDF પસંદ કરો.");
-
-return;
-
-}
-
-const progress =
-document.getElementById("importProgress");
-
-const result =
-document.getElementById("importResult");
-
-progress.innerHTML="PDF વાંચી રહ્યા છીએ...";
-
-result.innerHTML="";
-
-for(let f=0; f<files.length; f++){
-
-const file=files[f];
-
-const reader=new FileReader();
-
-reader.onload=async function(){
-
-const typedarray=new Uint8Array(this.result);
-
-const pdf=
-await pdfjsLib.getDocument({data:typedarray}).promise;
-
-let fullText = "";
-
-const propertyList = [];
-
-const propertyRecords = [];
-
-for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
-
-progress.innerHTML=
-"Page "+pageNo+" / "+pdf.numPages;
-
-const page=
-await pdf.getPage(pageNo);
-
-const viewport = page.getViewport({ scale: 2 });
-
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-
-canvas.width = viewport.width;
-canvas.height = viewport.height;
-
-await page.render({
-  canvasContext: ctx,
-  viewport: viewport
-}).promise;
-
-const text = await page.getTextContent();
-
-const pageText = text.items
-  .map(item => item.str)
-  .join(" ");
-
-fullText += pageText + "\n";
-
-}
-const lines = fullText.split("\n");
-
-for (const line of lines) {
-
-  const clean = line.trim();
-
-  if (!clean) continue;
-
-  const match = clean.match(/^(\d+)\s+(\d+\/?\d*)/);
-
-  if (!match) continue;
-
-  propertyRecords.push({
-    propertyNo: match[1],
-    houseNo: match[2],
-    raw: clean
-  });
-
-}
-
-console.log(propertyRecords);
-result.innerHTML = `
-<h3>OCR Result</h3>
-
-<textarea
-style="width:100%;height:400px;font-size:14px;">
-${fullText}
-</textarea>
-`;
-
-};
-
-reader.readAsArrayBuffer(file);
-
-}
-
-}
-
-document.getElementById("filterPaymentsBtn")
-?.addEventListener("click", () => {
-
-  loadTaxPayments();
-
-});
-
-document.getElementById("clearFilterBtn")
-?.addEventListener("click", () => {
-
-  document.getElementById("fromDate").value = "";
-
-  document.getElementById("toDate").value = "";
-
-  loadTaxPayments();
-
-});
-
-document.getElementById("exportApprovedExcel")
-?.addEventListener("click", async () => {
-
-  const snapshot = await getDocs(collection(db, "taxPayments"));
-
-  const rows = [];
-
-  for (const item of snapshot.docs) {
-
-    const payment = item.data();
-
-    if (payment.status !== "Approved") continue;
-
-    let owner = {};
-
-    const propertySnap = await getDocs(
-      query(
-        collection(db, "propertyTax"),
-        where("propertyNo", "==", payment.propertyNo)
-      )
-    );
-
-    if (!propertySnap.empty) {
-      owner = propertySnap.docs[0].data();
-    }
-
-    rows.push({
-      "મિલકત નંબર": payment.propertyNo,
-      "માલિક": owner.ownerName || "",
-      "ઘર નંબર": owner.houseNo || "",
-      "મોબાઇલ": owner.ownerMobile || "",
-      "વેરો": owner.taxAmount || 0,
-      "UTR": payment.utr,
-      "Status": payment.status
-    });
-
-  }
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-
-  const wb = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(wb, ws, "Approved Payments");
-
-  XLSX.writeFile(wb, "Approved_Payments.xlsx");
-
-});
-
-document.getElementById("backupBtn")
-?.addEventListener("click", backupData);
-
-async function backupData(){
-
-  alert("Backup તૈયાર થઈ રહ્યું છે...");
-
-  const backup = {};
-
-  backup.website =
-    (await getDoc(doc(db,"website","settings"))).data() || {};
-
-  backup.members =
-    (await getDocs(collection(db,"members")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  backup.notices =
-    (await getDocs(collection(db,"notices")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  backup.gallery =
-    (await getDocs(collection(db,"gallery")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  backup.complaints =
-    (await getDocs(collection(db,"complaints")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  backup.propertyTax =
-    (await getDocs(collection(db,"propertyTax")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  backup.taxPayments =
-    (await getDocs(collection(db,"taxPayments")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  backup.applications =
-    (await getDocs(collection(db,"applications")))
-      .docs.map(d => ({id:d.id,...d.data()}));
-
-  const blob = new Blob(
-    [JSON.stringify(backup, null, 2)],
-    { type: "application/json" }
-  );
-
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-
-  a.href = url;
-  a.download = "GramPanchayat_Backup.json";
-
-  a.click();
-
-  URL.revokeObjectURL(url);
-
-  alert("Backup સફળતાપૂર્વક Download થઈ ગયું.");
-
-} // ✅ Function અહીં બંધ થશે
-
-document.getElementById("restoreBtn")
-?.addEventListener("click", () => {
-
-  const ok = confirm(
-    "Restore કરતા પહેલાં હાલનો તમામ ડેટા કાઢી નાખવામાં આવશે.\n\nશું તમે આગળ વધવા માંગો છો?"
-  );
-
-  if (!ok) return;
-
-  document.getElementById("restoreFile").click();
-
-});
-
-document.getElementById("restoreFile")
-?.addEventListener("change", async function () {
-
-try {
-
-  if (!this.files.length) return;
-
-  const file = this.files[0];
-
-  const text = await file.text();
-
-  const backup = JSON.parse(text);
-
-const progress =
-document.getElementById("restoreProgress");
-
-progress.style.display = "block";
-progress.style.background = "#e8f5e9";
-progress.style.color = "#2e7d32";
-
-progress.innerHTML = "⏳ Backup File વાંચી રહ્યા છીએ...";
-
-progress.innerHTML =
-"🗑️ જૂનો Data કાઢી રહ્યા છીએ...";
-
-// જૂનો Data Delete કરો
-
-await clearCollection("members");
-await clearCollection("notices");
-await clearCollection("gallery");
-await clearCollection("complaints");
-await clearCollection("propertyTax");
-await clearCollection("taxPayments");
-await clearCollection("applications");
-
-progress.innerHTML =
-"📥 Backup Restore થઈ રહ્યું છે...";
-
-  alert("Backup File સફળતાપૂર્વક વાંચાઈ ગઈ.");
-
-  console.log(backup);
-
-// Website Settings Restore
-
-if (backup.website) {
-
-  await setDoc(
-    doc(db, "website", "settings"),
-    backup.website
-  );
-
-}
-
-// Members Restore
-if (backup.members) {
-
-  for (const item of backup.members) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "members", id),
-      item
-    );
-
-  }
-
-}
-
-// Notices Restore
-if (backup.notices) {
-
-  for (const item of backup.notices) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "notices", id),
-      item
-    );
-
-  }
-
-}
-
-// Gallery Restore
-if (backup.gallery) {
-
-  for (const item of backup.gallery) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "gallery", id),
-      item
-    );
-
-  }
-
-}
-
-// Complaints Restore
-if (backup.complaints) {
-
-  for (const item of backup.complaints) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "complaints", id),
-      item
-    );
-
-  }
-
-}
-
-// Property Tax Restore
-if (backup.propertyTax) {
-
-  for (const item of backup.propertyTax) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "propertyTax", id),
-      item
-    );
-
-  }
-
-}
-
-// Tax Payments Restore
-if (backup.taxPayments) {
-
-  for (const item of backup.taxPayments) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "taxPayments", id),
-      item
-    );
-
-  }
-
-}
-
-// Applications Restore
-if (backup.applications) {
-
-  for (const item of backup.applications) {
-
-    const id = item.id;
-    delete item.id;
-
-    await setDoc(
-      doc(db, "applications", id),
-      item
-    );
-
-  }
-
-}
-
-progress.innerHTML =
-"✅ Restore પૂર્ણ થયું.";
-
-setTimeout(()=>{
-
-progress.style.display = "none";
-
-},3000);
-
-alert("✅ Backup સફળતાપૂર્વક Restore થઈ ગયું.");
-
-loadWebsiteSettings();
-refreshDashboard();
-loadTaxPayments();
-
-setTimeout(() => {
-  location.reload();
-}, 1000);
-
-} catch (error) {
-
-  console.error(error);
-
-  progress.style.display = "block";
-  progress.style.background = "#ffebee";
-  progress.style.color = "#c62828";
-
-  progress.innerHTML =
-  "❌ Restore નિષ્ફળ થયું.<br><br>" +
-  error.message;
-
-  alert("Restore Failed");
-
-}
-
-});
-
-/*=========================================
-  BIRTH CERTIFICATE APPLICATIONS
-=========================================*/
-
-async function loadBirthApplications() {
-
-  const list =
-    document.getElementById("birthApplicationsList");
-
-  if (!list) return;
-
-  list.innerHTML = "⏳ અરજીઓ લોડ થઈ રહી છે...";
-
-  try {
-
-    const snapshot =
-      await getDocs(collection(db, "applications"));
-
-    let html = "";
-
-    snapshot.forEach((docSnap) => {
-
-      const data = docSnap.data();
-
-      if (data.service !== "birth") return;
-
-      const birth = data.birthData || {};
-
-      const status = data.status || "Pending";
-
-      html += `
-
-      <div class="admin-item"
-        style="
-          display:block;
-          padding:20px;
-          margin-bottom:15px;
-          border:1px solid #ddd;
-          border-radius:10px;
-          background:#fff;
-        ">
-
-        <h3>🟢 જન્મ પ્રમાણપત્ર અરજી</h3>
-
-        <p>
-          <b>અરજી નંબર:</b>
-          ${data.applicationNo || "-"}
-        </p>
-
-        <p>
-          <b>અરજદારનું નામ:</b>
-          ${data.name || "-"}
-        </p>
-
-        <p>
-          <b>મોબાઇલ:</b>
-          ${data.mobile || "-"}
-        </p>
-
-        <hr>
-
-        <h4>👶 જન્મની માહિતી</h4>
-
-        <p><b>બાળકનું નામ:</b> ${birth.birthName || "-"}</p>
-
-        <p><b>જાતિ:</b> ${birth.birthSex || "-"}</p>
-
-        <p><b>આધાર:</b> ${birth.birthAadhaar || "-"}</p>
-
-        <p><b>જન્મ તારીખ:</b> ${birth.birthDate || "-"}</p>
-
-        <p><b>જન્મ સ્થળ:</b> ${birth.birthPlace || "-"}</p>
-
-        <p><b>માતાનું નામ:</b> ${birth.birthMother || "-"}</p>
-
-        <p><b>પિતાનું નામ:</b> ${birth.birthFather || "-"}</p>
-
-        <p><b>માતાનો આધાર:</b> ${birth.birthMotherAadhaar || "-"}</p>
-
-        <p><b>પિતાનો આધાર:</b> ${birth.birthFatherAadhaar || "-"}</p>
-
-        <p>
-          <b>જન્મ સમયે સરનામું:</b>
-          ${birth.birthAddressAtBirth || "-"}
-        </p>
-
-        <p>
-          <b>કાયમી સરનામું:</b>
-          ${birth.birthPermanentAddress || "-"}
-        </p>
-
-        <p>
-          <b>નોંધણી નંબર:</b>
-          ${birth.birthRegistrationNo || "-"}
-        </p>
-
-        <p>
-          <b>નોંધણી તારીખ:</b>
-          ${birth.birthRegistrationDate || "-"}
-        </p>
-
-        <hr>
-
-        <h4>📎 Documents</h4>
-
-${
-  data.applicationForm?.url
-  ?
-  `
-  <p>
-    <a
-      href="${data.applicationForm.url}"
-      target="_blank"
-      style="
-        display:inline-block;
-        padding:10px 15px;
-        background:#198754;
-        color:white;
-        text-decoration:none;
-        border-radius:6px;
-        font-weight:bold;
-      "
-    >
-      📄 ભરેલું અરજી પત્રક જુઓ
-    </a>
-  </p>
-  `
-  :
-  `
-  <p>❌ ભરેલું અરજી પત્રક મળ્યું નથી.</p>
-  `
-}
-
-        ${
-          birth.oldBirthCertificate?.url
-          ?
-          `<p>
-            <a
-              href="${birth.oldBirthCertificate.url}"
-              target="_blank"
-              style="color:#1565c0;font-weight:bold;">
-              📄 જૂનો જન્મ દાખલો જુઓ
-            </a>
-          </p>`
-          :
-          `<p>❌ જૂનો જન્મ દાખલો મળ્યો નથી.</p>`
-        }
-
-        ${
-          data.documents?.length
-          ?
-          data.documents.map(file => `
-            <p>
-              <a
-                href="${file.url}"
-                target="_blank"
-                style="color:#1565c0;">
-                📎 ${file.name}
-              </a>
-            </p>
-          `).join("")
-          :
-          `<p>કોઈ અન્ય Document નથી.</p>`
-        }
-
-        <hr>
-
-        <p>
-          <b>સ્થિતિ:</b>
-          <span style="
-            background:#fff3cd;
-            padding:5px 10px;
-            border-radius:5px;">
-            ${status}
-          </span>
-        </p>
-
-        <div style="
-          display:flex;
-          gap:10px;
-          flex-wrap:wrap;
-          margin-top:15px;
-        ">
-
-<button
-  onclick="viewBirthApplication('${docSnap.id}')"
-  style="
-    background:#6f42c1;
-    color:white;
-    border:none;
-    padding:10px 16px;
-    border-radius:6px;
-    cursor:pointer;">
-  👁️ વિગતો જુઓ
-</button>
-
-          <button
-            onclick="approveBirthApplication('${docSnap.id}')"
-            style="
-              background:#198754;
-              color:white;
-              border:none;
-              padding:10px 16px;
-              border-radius:6px;
-              cursor:pointer;">
-            ✅ Approve
-          </button>
-
-          <button
-            onclick="rejectBirthApplication('${docSnap.id}')"
-            style="
-              background:#dc3545;
-              color:white;
-              border:none;
-              padding:10px 16px;
-              border-radius:6px;
-              cursor:pointer;">
-            ❌ Reject
-          </button>
-
-<button
-  onclick="editBirthApplication('${docSnap.id}')"
-  style="
-    background:#0d6efd;
-    color:white;
-    border:none;
-    padding:10px 16px;
-    border-radius:6px;
-    cursor:pointer;">
-  ✏️ Edit
-</button>
-
-          <button
-            onclick="deleteBirthApplication('${docSnap.id}')"
-            style="
-              background:#6c757d;
-              color:white;
-              border:none;
-              padding:10px 16px;
-              border-radius:6px;
-              cursor:pointer;">
-            🗑️ Delete
-          </button>
-
-        </div>
-
-      </div>
-
-      `;
-
-    });
-
-    if (!html) {
-
-      html =
-        "<p>📭 હાલમાં કોઈ જન્મ પ્રમાણપત્રની અરજી નથી.</p>";
-
-    }
-
-    list.innerHTML = html;
-
-  } catch (error) {
-
-    console.error(error);
-
-    list.innerHTML =
-      "❌ અરજી લોડ કરવામાં ભૂલ આવી: " +
-      error.message;
-
-  }
-
-}
-
-loadBirthApplications();
-
-document
-  .getElementById("searchBirthApplications")
-  ?.addEventListener("keyup", function () {
-
-    const value = this.value.toLowerCase().trim();
-
-    document
-      .querySelectorAll("#birthApplicationsList .admin-item")
-      .forEach(item => {
-
-        const text = item.innerText.toLowerCase();
-
-        item.style.display =
-          text.includes(value)
-          ? "block"
-          : "none";
-
-      });
-
-  });
-
-/*=========================================
-  APPROVE BIRTH APPLICATION
-=========================================*/
-
-async function approveBirthApplication(id) {
-
-  const ok = confirm(
-    "શું તમે આ જન્મ પ્રમાણપત્રની અરજી Approve કરવા માંગો છો?"
-  );
-
-  if (!ok) return;
-
-  try {
-
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-        status: "Approved"
-      }
-    );
-
-    alert("✅ જન્મ પ્રમાણપત્રની અરજી Approved થઈ ગઈ.");
-
-    loadBirthApplications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Approve કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-
-}
-
-window.approveBirthApplication = approveBirthApplication;
-
-
-/*=========================================
-  REJECT BIRTH APPLICATION
-=========================================*/
-
-async function rejectBirthApplication(id) {
-
-  const reason = prompt(
-    "Reject કરવાનું કારણ લખો:"
-  );
-
-  if (reason === null) return;
-
-  try {
-
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-        status: "Rejected",
-        rejectionReason: reason
-      }
-    );
-
-    alert("❌ જન્મ પ્રમાણપત્રની અરજી Reject થઈ ગઈ.");
-
-    loadBirthApplications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Reject કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-
-}
-
-window.rejectBirthApplication = rejectBirthApplication;
-
-
-/*=========================================
-  DELETE BIRTH APPLICATION
-=========================================*/
-
-async function deleteBirthApplication(id) {
-
-  const ok = confirm(
-    "⚠️ શું તમે આ અરજી કાયમ માટે Delete કરવા માંગો છો?"
-  );
-
-  if (!ok) return;
-
-  try {
-
-    await deleteDoc(
-      doc(db, "applications", id)
-    );
-
-    alert("🗑️ અરજી Delete થઈ ગઈ.");
-
-    loadBirthApplications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Delete કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-
-}
-
-window.deleteBirthApplication = deleteBirthApplication;
-
-/*=========================================
-  VIEW BIRTH APPLICATION DETAILS
-=========================================*/
-
-async function viewBirthApplication(id) {
-
-  try {
-
-    const snap = await getDoc(
-      doc(db, "applications", id)
-    );
-
-    if (!snap.exists()) {
-      alert("અરજી મળી નથી.");
-      return;
-    }
-
-    const data = snap.data();
-    const birth = data.birthData || {};
-
-    alert(
-`જન્મ પ્રમાણપત્ર અરજી
-
-અરજી નંબર: ${data.applicationNo || "-"}
-
-અરજદારનું નામ: ${data.name || "-"}
-
-મોબાઇલ: ${data.mobile || "-"}
-
-બાળકનું નામ: ${birth.birthName || "-"}
-
-જાતિ: ${birth.birthSex || "-"}
-
-આધાર: ${birth.birthAadhaar || "-"}
-
-જન્મ તારીખ: ${birth.birthDate || "-"}
-
-જન્મ સ્થળ: ${birth.birthPlace || "-"}
-
-માતાનું નામ: ${birth.birthMother || "-"}
-
-પિતાનું નામ: ${birth.birthFather || "-"}
-
-માતાનો આધાર: ${birth.birthMotherAadhaar || "-"}
-
-પિતાનો આધાર: ${birth.birthFatherAadhaar || "-"}
-
-જન્મ સમયે સરનામું:
-${birth.birthAddressAtBirth || "-"}
-
-કાયમી સરનામું:
-${birth.birthPermanentAddress || "-"}
-
-નોંધણી નંબર:
-${birth.birthRegistrationNo || "-"}
-
-નોંધણી તારીખ:
-${birth.birthRegistrationDate || "-"}
-
-સ્થિતિ:
-${data.status || "Pending"}`
-    );
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "વિગતો બતાવવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-
-}
-
-window.viewBirthApplication =
-  viewBirthApplication;
-
-/*=========================================
-  EDIT BIRTH APPLICATION
-=========================================*/
-
-async function editBirthApplication(id) {
-
-  try {
-
-    const snap = await getDoc(
-      doc(db, "applications", id)
-    );
-
-    if (!snap.exists()) {
-      alert("અરજી મળી નથી.");
-      return;
-    }
-
-    const data = snap.data();
-    const birth = data.birthData || {};
-
-    const birthName = prompt(
-      "બાળકનું નામ:",
-      birth.birthName || ""
-    );
-    if (birthName === null) return;
-
-    const birthSex = prompt(
-      "જાતિ (MALE/FEMALE):",
-      birth.birthSex || ""
-    );
-    if (birthSex === null) return;
-
-    const birthAadhaar = prompt(
-      "બાળકનો આધાર નંબર:",
-      birth.birthAadhaar || ""
-    );
-    if (birthAadhaar === null) return;
-
-    const birthDate = prompt(
-      "જન્મ તારીખ:",
-      birth.birthDate || ""
-    );
-    if (birthDate === null) return;
-
-    const birthPlace = prompt(
-      "જન્મ સ્થળ:",
-      birth.birthPlace || ""
-    );
-    if (birthPlace === null) return;
-
-    const birthMother = prompt(
-      "માતાનું નામ:",
-      birth.birthMother || ""
-    );
-    if (birthMother === null) return;
-
-    const birthFather = prompt(
-      "પિતાનું નામ:",
-      birth.birthFather || ""
-    );
-    if (birthFather === null) return;
-
-    const birthMotherAadhaar = prompt(
-      "માતાનો આધાર નંબર:",
-      birth.birthMotherAadhaar || ""
-    );
-    if (birthMotherAadhaar === null) return;
-
-    const birthFatherAadhaar = prompt(
-      "પિતાનો આધાર નંબર:",
-      birth.birthFatherAadhaar || ""
-    );
-    if (birthFatherAadhaar === null) return;
-
-    const birthAddressAtBirth = prompt(
-      "જન્મ સમયે માતા-પિતાનું સરનામું:",
-      birth.birthAddressAtBirth || ""
-    );
-    if (birthAddressAtBirth === null) return;
-
-    const birthPermanentAddress = prompt(
-      "માતા-પિતાનું કાયમી સરનામું:",
-      birth.birthPermanentAddress || ""
-    );
-    if (birthPermanentAddress === null) return;
-
-    const birthRegistrationNo = prompt(
-      "નોંધણી નંબર:",
-      birth.birthRegistrationNo || ""
-    );
-    if (birthRegistrationNo === null) return;
-
-    const birthRegistrationDate = prompt(
-      "નોંધણી તારીખ:",
-      birth.birthRegistrationDate || ""
-    );
-    if (birthRegistrationDate === null) return;
-
-
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-
-        "birthData.birthName":
-          birthName.trim(),
-
-        "birthData.birthSex":
-          birthSex.trim(),
-
-        "birthData.birthAadhaar":
-          birthAadhaar.trim(),
-
-        "birthData.birthDate":
-          birthDate.trim(),
-
-        "birthData.birthPlace":
-          birthPlace.trim(),
-
-        "birthData.birthMother":
-          birthMother.trim(),
-
-        "birthData.birthFather":
-          birthFather.trim(),
-
-        "birthData.birthMotherAadhaar":
-          birthMotherAadhaar.trim(),
-
-        "birthData.birthFatherAadhaar":
-          birthFatherAadhaar.trim(),
-
-        "birthData.birthAddressAtBirth":
-          birthAddressAtBirth.trim(),
-
-        "birthData.birthPermanentAddress":
-          birthPermanentAddress.trim(),
-
-        "birthData.birthRegistrationNo":
-          birthRegistrationNo.trim(),
-
-        "birthData.birthRegistrationDate":
-          birthRegistrationDate.trim()
-
-      }
-    );
-
-    alert(
-      "✅ જન્મ પ્રમાણપત્રની બધી માહિતી Update થઈ ગઈ."
-    );
-
-    loadBirthApplications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Edit કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-
-}
-
-window.editBirthApplication =
-  editBirthApplication;
-  
-/*=========================================
-  DEATH CERTIFICATE APPLICATIONS
-=========================================*/
-
-async function loadDeathApplications() {
-
-  const list =
-    document.getElementById("deathApplicationsList");
-
-  if (!list) return;
-
-  list.innerHTML =
-    "⏳ મૃત્યુ પ્રમાણપત્રની અરજીઓ લોડ થઈ રહી છે...";
-
-  try {
-
-    const snapshot =
-      await getDocs(collection(db, "applications"));
-
-    let html = "";
-
-    snapshot.forEach((docSnap) => {
-
-      const data = docSnap.data();
-
-      if (data.service !== "death") return;
-
-      const death = data.deathData || {};
-
-      html += `
-
-      <div class="admin-item"
-        style="
-          display:block;
-          padding:20px;
-          margin-bottom:15px;
-          border:1px solid #ddd;
-          border-radius:10px;
-          background:#fff;
-        ">
-
-        <h3>⚰️ મૃત્યુ પ્રમાણપત્ર અરજી</h3>
-
-        <p>
-          <b>અરજી નંબર:</b>
-          ${data.applicationNo || "-"}
-        </p>
-
-        <p>
-          <b>અરજદારનું નામ:</b>
-          ${data.name || "-"}
-        </p>
-
-        <p>
-          <b>મોબાઇલ:</b>
-          ${data.mobile || "-"}
-        </p>
-
-        <hr>
-
-        <h4>⚰️ મૃત્યુની માહિતી</h4>
-
-        <p>
-          <b>મરનારનું નામ:</b>
-          ${death.deathName || "-"}
-        </p>
-
-        <p>
-          <b>જાતિ:</b>
-          ${death.deathSex || "-"}
-        </p>
-
-        <p>
-          <b>આધાર:</b>
-          ${death.deathAadhaar || "-"}
-        </p>
-
-        <p>
-          <b>ઉંમર:</b>
-          ${death.deathAge || "-"}
-        </p>
-
-        <p>
-          <b>મરણ તારીખ:</b>
-          ${death.deathDate || "-"}
-        </p>
-
-        <p>
-          <b>મરણ સ્થળ:</b>
-          ${death.deathPlace || "-"}
-        </p>
-
-        <p>
-          <b>પતિ / પત્નીનું નામ:</b>
-          ${death.deathSpouse || "-"}
-        </p>
-
-        <p>
-          <b>પતિ / પત્નીનો આધાર:</b>
-          ${death.deathSpouseAadhaar || "-"}
-        </p>
-
-        <p>
-          <b>માતાનું નામ:</b>
-          ${death.deathMother || "-"}
-        </p>
-
-        <p>
-          <b>માતાનો આધાર:</b>
-          ${death.deathMotherAadhaar || "-"}
-        </p>
-
-        <p>
-          <b>પિતાનું નામ:</b>
-          ${death.deathFather || "-"}
-        </p>
-
-        <p>
-          <b>પિતાનો આધાર:</b>
-          ${death.deathFatherAadhaar || "-"}
-        </p>
-
-        <p>
-          <b>મરણ સમયે સરનામું:</b>
-          ${death.deathAddressAtDeath || "-"}
-        </p>
-
-        <p>
-          <b>કાયમી સરનામું:</b>
-          ${death.deathPermanentAddress || "-"}
-        </p>
-
-        <p>
-          <b>નોંધણી નંબર:</b>
-          ${death.deathRegistrationNo || "-"}
-        </p>
-
-        <p>
-          <b>નોંધણી તારીખ:</b>
-          ${death.deathRegistrationDate || "-"}
-        </p>
-
-        <p>
-          <b>કારણ / Remarks:</b>
-          ${death.deathRemarks || "-"}
-        </p>
-
-        <hr>
-
-        <h4>📎 Documents</h4>
-
-${
-  data.applicationForm?.url
-  ?
-  `
-  <p>
-    <a
-      href="${data.applicationForm.url}"
-      target="_blank"
-      style="
-        display:inline-block;
-        padding:10px 15px;
-        background:#198754;
-        color:white;
-        text-decoration:none;
-        border-radius:6px;
-        font-weight:bold;
-      "
-    >
-      📄 ભરેલું અરજી પત્રક જુઓ
-    </a>
-  </p>
-  `
-  :
-  `
-  <p>❌ ભરેલું અરજી પત્રક મળ્યું નથી.</p>
-  `
-}
-
-        ${
-          data.documents?.length
-          ?
-          data.documents.map(file => `
-
-            <p>
-              <a
-                href="${file.url}"
-                target="_blank"
-                style="
-                  color:#1565c0;
-                  font-weight:bold;
-                "
-              >
-                📄 ${file.name}
-              </a>
-            </p>
-
-          `).join("")
-
-          :
-
-          `<p>❌ કોઈ Document મળ્યું નથી.</p>`
-        }
-
-        <hr>
-
-        <p>
-          <b>સ્થિતિ:</b>
-
-          <span style="
-            background:#fff3cd;
-            padding:5px 10px;
-            border-radius:5px;
-          ">
-            ${data.status || "Pending"}
-          </span>
-        </p>
-
-        <div style="margin-top:15px;">
-
-          <button
-            onclick="approveDeathApplication('${docSnap.id}')"
-            style="
-              background:#198754;
-              color:white;
-              border:0;
-              padding:10px 15px;
-              border-radius:6px;
-              margin-right:5px;
-            "
-          >
-            ✅ Approve
-          </button>
-
-          <button
-            onclick="rejectDeathApplication('${docSnap.id}')"
-            style="
-              background:#dc3545;
-              color:white;
-              border:0;
-              padding:10px 15px;
-              border-radius:6px;
-              margin-right:5px;
-            "
-          >
-            ❌ Reject
-          </button>
-
-          <button
-            onclick="deleteDeathApplication('${docSnap.id}')"
-            style="
-              background:#6c757d;
-              color:white;
-              border:0;
-              padding:10px 15px;
-              border-radius:6px;
-            "
-          >
-            🗑️ Delete
-          </button>
-
-        </div>
-
-      </div>
-
-      `;
-
-    });
-
-    if (!html) {
-
-      html =
-        "<p>📭 હાલમાં કોઈ મૃત્યુ પ્રમાણપત્રની અરજી નથી.</p>";
-
-    }
-
-    list.innerHTML = html;
-
-  } catch (error) {
-
-    console.error(error);
-
-    list.innerHTML =
-      "❌ અરજી લોડ કરવામાં ભૂલ આવી: " +
-      error.message;
-
-  }
-}
-
-
-/*=========================================
-  APPROVE DEATH APPLICATION
-=========================================*/
-
-async function approveDeathApplication(id) {
-
-  if (!confirm(
-    "શું તમે આ મૃત્યુ પ્રમાણપત્ર અરજી Approve કરવા માંગો છો?"
-  )) {
+  if (!name || !position) {
+    alert("⚠️ નામ અને હોદ્દો ભરવો જરૂરી છે.");
     return;
   }
 
   try {
 
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-        status: "Approved"
-      }
-    );
+    await addDoc(collection(db, "contacts"), {
+      name: name,
+      position: position,
+      mobile: mobile,
+      email: email,
+      createdAt: serverTimestamp()
+    });
 
-    alert(
-      "✅ મૃત્યુ પ્રમાણપત્રની અરજી Approved થઈ ગઈ."
-    );
+    alert("✅ સંપર્ક સફળતાપૂર્વક ઉમેરાયો.");
 
-    await loadDeathApplications();
+    contactFormFixed.reset();
 
-    refreshDashboard();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Approve કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-}
-
-window.approveDeathApplication =
-  approveDeathApplication;
-
-
-/*=========================================
-  REJECT DEATH APPLICATION
-=========================================*/
-
-async function rejectDeathApplication(id) {
-
-  const reason = prompt(
-    "Reject કરવાનું કારણ લખો:"
-  );
-
-  if (reason === null) return;
-
-  try {
-
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-        status: "Rejected",
-        rejectionReason: reason
-      }
-    );
-
-    alert(
-      "❌ મૃત્યુ પ્રમાણપત્રની અરજી Reject થઈ ગઈ."
-    );
-
-    await loadDeathApplications();
-
-    refreshDashboard();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Reject કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-}
-
-window.rejectDeathApplication =
-  rejectDeathApplication;
-
-
-/*=========================================
-  DELETE DEATH APPLICATION
-=========================================*/
-
-async function deleteDeathApplication(id) {
-
-  const ok = confirm(
-    "⚠️ શું તમે આ મૃત્યુ પ્રમાણપત્રની અરજી કાયમ માટે Delete કરવા માંગો છો?"
-  );
-
-  if (!ok) return;
-
-  try {
-
-    console.log(
-      "Deleting Death Application ID:",
-      id
-    );
-
-    await deleteDoc(
-      doc(db, "applications", id)
-    );
-
-    alert(
-      "🗑️ મૃત્યુ પ્રમાણપત્રની અરજી Delete થઈ ગઈ."
-    );
-
-    await loadDeathApplications();
-
-    refreshDashboard();
+    await loadContactsFixed();
 
   } catch (error) {
 
     console.error(
-      "Death Delete Error:",
+      "CONTACT ADD ERROR:",
       error
     );
+
+    alert(
+      "❌ સંપર્ક ઉમેરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+  }
+});
+
+
+/*====================================================
+  LOAD CONTACTS
+====================================================*/
+
+async function loadContactsFixed() {
+
+  const list =
+    document.getElementById("contactList");
+
+  if (!list) return;
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "contacts")
+      );
+
+    let html = "";
+
+    snapshot.forEach((item) => {
+
+      const data = item.data();
+
+      html += `
+        <div class="admin-item">
+
+          <div>
+
+            <h3>
+              👤 ${data.name || "-"}
+            </h3>
+
+            <p>
+              <strong>હોદ્દો:</strong>
+              ${data.position || "-"}
+            </p>
+
+            <p>
+              📞 ${data.mobile || "-"}
+            </p>
+
+            <p>
+              ✉️ ${data.email || "-"}
+            </p>
+
+          </div>
+
+          <div class="admin-actions">
+
+            <button
+              class="edit-btn"
+              onclick="editContactFixed('${item.id}')">
+
+              ✏️ Edit
+
+            </button>
+
+            <button
+              class="delete-btn"
+              onclick="deleteContactFixed('${item.id}')">
+
+              🗑️ Delete
+
+            </button>
+
+          </div>
+
+        </div>
+      `;
+    });
+
+    list.innerHTML =
+      html ||
+      "<p>હાલ કોઈ સંપર્ક ઉમેરાયેલ નથી.</p>";
+
+  } catch (error) {
+
+    console.error(
+      "CONTACT LOAD ERROR:",
+      error
+    );
+
+    list.innerHTML =
+      "<p>❌ સંપર્ક લોડ કરવામાં ભૂલ આવી.</p>";
+  }
+}
+
+
+/*====================================================
+  EDIT CONTACT
+====================================================*/
+
+let editingContactIdFixed = null;
+
+
+async function editContactFixed(id) {
+
+  try {
+
+    const snap =
+      await getDoc(
+        doc(db, "contacts", id)
+      );
+
+    if (!snap.exists()) {
+
+      alert("સંપર્ક મળ્યો નથી.");
+
+      return;
+    }
+
+    const data =
+      snap.data();
+
+    editingContactIdFixed = id;
+
+
+    document.getElementById(
+      "editContactName"
+    ).value =
+      data.name || "";
+
+
+    document.getElementById(
+      "editContactPosition"
+    ).value =
+      data.position || "";
+
+
+    document.getElementById(
+      "editContactMobile"
+    ).value =
+      data.mobile || "";
+
+
+    document.getElementById(
+      "editContactEmail"
+    ).value =
+      data.email || "";
+
+
+    document.getElementById(
+      "contactEditPopup"
+    ).style.display = "flex";
+
+
+  } catch (error) {
+
+    console.error(
+      "CONTACT EDIT ERROR:",
+      error
+    );
+
+    alert(
+      "❌ Edit કરવામાં ભૂલ આવી:\n" +
+      error.message
+    );
+  }
+}
+
+
+/*====================================================
+  UPDATE CONTACT
+====================================================*/
+
+document
+  .getElementById("updateContactBtn")
+  ?.addEventListener(
+    "click",
+    async () => {
+
+      if (!editingContactIdFixed) {
+        return;
+      }
+
+
+      const name =
+        document
+          .getElementById(
+            "editContactName"
+          )
+          ?.value.trim() || "";
+
+
+      const position =
+        document
+          .getElementById(
+            "editContactPosition"
+          )
+          ?.value.trim() || "";
+
+
+      const mobile =
+        document
+          .getElementById(
+            "editContactMobile"
+          )
+          ?.value.trim() || "";
+
+
+      const email =
+        document
+          .getElementById(
+            "editContactEmail"
+          )
+          ?.value.trim() || "";
+
+
+      if (!name || !position) {
+
+        alert(
+          "⚠️ નામ અને હોદ્દો ભરવો જરૂરી છે."
+        );
+
+        return;
+      }
+
+
+      try {
+
+        await updateDoc(
+          doc(
+            db,
+            "contacts",
+            editingContactIdFixed
+          ),
+          {
+
+            name: name,
+
+            position: position,
+
+            mobile: mobile,
+
+            email: email,
+
+            updatedAt:
+              serverTimestamp()
+          }
+        );
+
+
+        alert(
+          "✅ સંપર્ક સફળતાપૂર્વક Update થયો."
+        );
+
+
+        closeContactEditFixed();
+
+
+        await loadContactsFixed();
+
+
+      } catch (error) {
+
+        console.error(
+          "CONTACT UPDATE ERROR:",
+          error
+        );
+
+        alert(
+          "❌ Update કરવામાં ભૂલ આવી:\n" +
+          error.message
+        );
+      }
+
+    }
+  );
+
+
+/*====================================================
+  CLOSE EDIT POPUP
+====================================================*/
+
+function closeContactEditFixed() {
+
+  const popup =
+    document.getElementById(
+      "contactEditPopup"
+    );
+
+
+  if (popup) {
+
+    popup.style.display =
+      "none";
+  }
+
+
+  editingContactIdFixed =
+    null;
+}
+
+
+/*====================================================
+  DELETE CONTACT
+====================================================*/
+
+async function deleteContactFixed(id) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ સંપર્ક Delete કરવા માંગો છો?"
+    );
+
+
+  if (!ok) {
+    return;
+  }
+
+
+  try {
+
+    await deleteDoc(
+      doc(
+        db,
+        "contacts",
+        id
+      )
+    );
+
+
+    alert(
+      "🗑️ સંપર્ક Delete થઈ ગયો."
+    );
+
+
+    await loadContactsFixed();
+
+
+  } catch (error) {
+
+    console.error(
+      "CONTACT DELETE ERROR:",
+      error
+    );
+
 
     alert(
       "❌ Delete કરવામાં ભૂલ આવી:\n" +
       error.message
     );
-
   }
 }
 
-window.deleteDeathApplication =
-  deleteDeathApplication;
+
+/*====================================================
+  GLOBAL FUNCTIONS
+====================================================*/
+
+window.editContactFixed =
+  editContactFixed;
 
 
-/*=========================================
-  LOAD DEATH APPLICATIONS
-=========================================*/
+window.deleteContactFixed =
+  deleteContactFixed;
 
-loadDeathApplications();
 
-/*=========================================
-  INCOME CERTIFICATE APPLICATIONS
-=========================================*/
+window.closeContactEditFixed =
+  closeContactEditFixed;
 
-async function loadIncomeApplications() {
+
+/*====================================================
+  START CONTACTS
+====================================================*/
+
+loadContactsFixed();
+
+
+/*====================================================
+  CONTACT MANAGEMENT FIX END
+====================================================*/
+
+/* =========================================================
+   APPLICATION SECTIONS - FIXED
+   Birth / Death / Income / Complaint
+========================================================= */
+
+function appSafe(value) {
+  return String(value ?? "-")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* =========================================================
+   COMMON APPLICATION LOADER
+========================================================= */
+
+async function loadServiceApplications(
+  service,
+  listId,
+  searchId,
+  title,
+  icon
+) {
 
   const list =
-    document.getElementById("incomeApplicationsList");
+    document.getElementById(listId);
 
   if (!list) return;
 
   list.innerHTML =
-    "⏳ આવક પ્રમાણપત્રની અરજીઓ લોડ થઈ રહી છે...";
+    "⏳ અરજીઓ લોડ થઈ રહી છે...";
 
   try {
 
@@ -3828,334 +5390,552 @@ async function loadIncomeApplications() {
         collection(db, "applications")
       );
 
+    const search =
+      document
+        .getElementById(searchId)
+        ?.value
+        ?.trim()
+        .toLowerCase() || "";
+
     let html = "";
 
     snapshot.forEach((docSnap) => {
 
-      const data = docSnap.data();
+      const data =
+        docSnap.data();
 
-      if (data.service !== "income") return;
+      /* SERVICE CHECK */
+      if (data.service !== service) {
+        return;
+      }
 
-      const income =
-        data.incomeData || {};
+      const applicationNo =
+        data.applicationNo || "-";
 
-      html += `
+      const name =
+        data.name ||
+        data.propertyData?.applicantName ||
+        data.birthData?.birthApplicantName ||
+        data.incomeData?.incomeApplicantName ||
+        "-";
 
-        <div class="admin-item"
-          style="
-            display:block;
-            padding:20px;
-            margin-bottom:15px;
-            border:1px solid #ddd;
-            border-radius:10px;
-            background:#fff;
-          ">
+      const mobile =
+        data.mobile ||
+        data.propertyData?.mobile ||
+        "-";
 
-          <h3>💰 આવક પ્રમાણપત્ર અરજી</h3>
+      const status =
+        data.status || "Pending";
 
+      const searchText = `
+        ${applicationNo}
+        ${name}
+        ${mobile}
+      `.toLowerCase();
+
+      /* SEARCH */
+      if (
+        search &&
+        !searchText.includes(search)
+      ) {
+        return;
+      }
+
+
+      /* STATUS */
+      let statusText =
+        "🟡 Pending";
+
+      if (status === "Approved") {
+        statusText =
+          "🟢 Approved";
+      }
+
+      if (status === "Rejected") {
+        statusText =
+          "🔴 Rejected";
+      }
+
+
+      /* EXTRA DATA */
+
+      let extraHtml = "";
+
+      if (service === "birth") {
+
+        const birth =
+          data.birthData || {};
+
+        extraHtml = `
           <p>
-            <b>અરજી નંબર:</b>
-            ${data.applicationNo || "-"}
+            <b>બાળકનું નામ:</b>
+            ${appSafe(birth.birthName)}
           </p>
 
           <p>
-            <b>અરજદારનું નામ:</b>
-            ${income.incomeApplicantName || data.name || "-"}
+            <b>જન્મ તારીખ:</b>
+            ${appSafe(birth.birthDate)}
           </p>
 
           <p>
-            <b>મોબાઈલ:</b>
-            ${data.mobile || "-"}
+            <b>જન્મ સ્થળ:</b>
+            ${appSafe(birth.birthPlace)}
+          </p>
+
+          <p>
+            <b>માતાનું નામ:</b>
+            ${appSafe(birth.birthMother)}
+          </p>
+
+          <p>
+            <b>પિતાનું નામ:</b>
+            ${appSafe(birth.birthFather)}
+          </p>
+        `;
+      }
+
+
+      if (service === "death") {
+
+        const death =
+          data.deathData || {};
+
+        extraHtml = `
+          <p>
+            <b>મરનારનું નામ:</b>
+            ${appSafe(death.deathName)}
+          </p>
+
+          <p>
+            <b>ઉંમર:</b>
+            ${appSafe(death.deathAge)}
+          </p>
+
+          <p>
+            <b>મરણ તારીખ:</b>
+            ${appSafe(death.deathDate)}
+          </p>
+
+          <p>
+            <b>મરણ સ્થળ:</b>
+            ${appSafe(death.deathPlace)}
+          </p>
+
+          <p>
+            <b>પતિ / પત્ની:</b>
+            ${appSafe(death.deathSpouse)}
+          </p>
+        `;
+      }
+
+
+      if (service === "income") {
+
+        const income =
+          data.incomeData || {};
+
+        extraHtml = `
+          <p>
+            <b>સરનામું:</b>
+            ${appSafe(income.incomeAddress)}
+          </p>
+
+          <p>
+            📷 પાસપોર્ટ ફોટો:
+            ${
+              income.incomePhoto?.url
+                ? `<a href="${appSafe(income.incomePhoto.url)}"
+                     target="_blank">
+                     📂 જુઓ
+                   </a>`
+                : " ઉપલબ્ધ નથી"
+            }
+          </p>
+
+          <p>
+            🪪 આધાર:
+            ${
+              income.incomeAadhaar?.url
+                ? `<a href="${appSafe(income.incomeAadhaar.url)}"
+                     target="_blank">
+                     📂 જુઓ
+                   </a>`
+                : " ઉપલબ્ધ નથી"
+            }
+          </p>
+
+          <p>
+            📄 રેશન કાર્ડ:
+            ${
+              income.incomeRationCard?.url
+                ? `<a href="${appSafe(income.incomeRationCard.url)}"
+                     target="_blank">
+                     📂 જુઓ
+                   </a>`
+                : " ઉપલબ્ધ નથી"
+            }
+          </p>
+
+          <p>
+            💡 લાઈટ બિલ:
+            ${
+              income.incomeLightBill?.url
+                ? '<a href="' + appSafe(income.incomeLightBill.url) + '" target="_blank">📂 જુવો</a>'
+: "ઉપલબ્ધ નથી"
+            }
+          </p>
+
+          <p>
+            📑 આવકનું ફોર્મ:
+            ${
+              income.incomeForm?.url
+                ? '<a href="' + appSafe(income.incomeForm.url) + '" target="_blank">📄 જુવો</a>'
+: "ઉપલબ્ધ નથી"
+            }
+          </p>
+        `;
+      }
+
+
+      if (service === "complaint") {
+
+        const complaint =
+          data.complaintData ||
+          data.complaint ||
+          {};
+
+        extraHtml = `
+          <p>
+            <b>ફરિયાદ:</b>
+            ${appSafe(
+              complaint.complaintText ||
+              complaint.description ||
+              complaint.message ||
+              data.message ||
+              "-"
+            )}
           </p>
 
           <p>
             <b>સરનામું:</b>
-            ${income.incomeAddress || "-"}
+            ${appSafe(
+              complaint.address ||
+              data.address ||
+              "-"
+            )}
           </p>
+        `;
+      }
 
-          <p>
-            <b>સ્થિતિ:</b>
-            ${
-              data.status === "Approved"
-                ? "🟢 મંજૂર"
-                : data.status === "Rejected"
-                ? "🔴 નામંજૂર"
-                : "🟡 તપાસ હેઠળ"
-            }
-          </p>
+/* CARD */
 
-          <hr>
+html += `
+  <div
+    class="admin-item"
+    style="
+      background:#fff;
+      padding:16px;
+      margin-bottom:16px;
+      border-radius:14px;
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
+      border:1px solid #eee;
+    "
+  >
 
-<h4>📎 જરૂરી દસ્તાવેજો</h4>
+    <!-- HEADER -->
+    <div
+      style="
+        font-size:18px;
+        font-weight:700;
+        color:#1769d1;
+        margin-bottom:14px;
+        padding-bottom:10px;
+        border-bottom:1px solid #eee;
+      "
+    >
+      ${icon} ${title}
+    </div>
 
-${
-  income.incomePhoto?.url
-  ? `<p>
-      📷 પાસપોર્ટ ફોટો:
-      <a href="${income.incomePhoto.url}" target="_blank">
-        📂 જુઓ
-      </a>
-    </p>`
-  : `<p>📷 પાસપોર્ટ ફોટો ઉપલબ્ધ નથી</p>`
-}
 
-${
-  income.incomeAadhaar?.url
-  ? `<p>
-      🪪 આધાર કાર્ડ:
-      <a href="${income.incomeAadhaar.url}" target="_blank">
-        📂 જુઓ
-      </a>
-    </p>`
-  : `<p>🪪 આધાર કાર્ડ ઉપલબ્ધ નથી</p>`
-}
+    <!-- BASIC INFORMATION -->
+    <div
+      style="
+        display:grid;
+        grid-template-columns:1fr;
+        gap:9px;
+      "
+    >
 
-${
-  income.incomeRationCard?.url
-  ? `<p>
-      📄 રેશન કાર્ડ:
-      <a href="${income.incomeRationCard.url}" target="_blank">
-        📂 જુઓ
-      </a>
-    </p>`
-  : `<p>📄 રેશન કાર્ડ ઉપલબ્ધ નથી</p>`
-}
+      <div>
+        <b>અરજી નંબર:</b>
+        <span>
+          ${appSafe(applicationNo)}
+        </span>
+      </div>
 
-${
-  income.incomeLightBill?.url
-  ? `<p>
-      💡 લાઈટ બિલ:
-      <a href="${income.incomeLightBill.url}" target="_blank">
-        📂 જુઓ
-      </a>
-    </p>`
-  : `<p>💡 લાઈટ બિલ ઉપલબ્ધ નથી</p>`
-}
+      <div>
+        <b>અરજદારનું નામ:</b>
+        <span>
+          ${appSafe(name)}
+        </span>
+      </div>
 
-${
-  income.incomeForm?.url
-  ? `<p>
-      📑 ભરેલું આવકનું ફોર્મ:
-      <a href="${income.incomeForm.url}" target="_blank">
-        📂 જુઓ
-      </a>
-    </p>`
-  : `<p>📑 આવકનું ફોર્મ ઉપલબ્ધ નથી</p>`
-}
+      <div>
+        <b>મોબાઇલ:</b>
+        <span>
+          ${appSafe(mobile)}
+        </span>
+      </div>
 
-<div style="margin-top:15px;">
+      ${extraHtml}
 
-<button
-  onclick="viewIncomeApplication('${docSnap.id}')">
-  👁️ View
-</button>
+      <div>
+        <b>સ્થિતિ:</b>
+        ${statusText}
+      </div>
 
-            <button
-              onclick="approveIncomeApplication('${docSnap.id}')">
-              ✅ Approve
-            </button>
+      ${
+        data.rejectionReason
+          ? `
+            <div
+              style="
+                color:red;
+                background:#fff1f1;
+                padding:8px;
+                border-radius:8px;
+              "
+            >
+              <b>Reject કારણ:</b>
+              ${appSafe(data.rejectionReason)}
+            </div>
+          `
+          : ""
+      }
 
-            <button
-              onclick="rejectIncomeApplication('${docSnap.id}')">
-              ❌ Reject
-            </button>
+    </div>
 
-            <button
-              onclick="deleteIncomeApplication('${docSnap.id}')">
-              🗑️ Delete
-            </button>
+<!-- ACTION BUTTONS -->
+<div
+  style="
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+    margin-top:16px;
+  "
+>
 
-          </div>
+  <!-- VIEW -->
+  <button
+    type="button"
+    data-app-action="view"
+data-id="${encodeURIComponent(docSnap.id)}"
+data-app-print="${encodeURIComponent(docSnap.id)}"
+    style="
+      width:100%;
+      padding:11px 8px;
+      border:0;
+      border-radius:8px;
+      background:#1769d1;
+      color:white;
+      font-weight:600;
+    "
+  >
+    👁️ View
+  </button>
 
-        </div>
 
-      `;
-
-    });
-
-    list.innerHTML =
-      html ||
-      "હાલ કોઈ આવક પ્રમાણપત્રની અરજી નથી.";
-
-  } catch (error) {
-
-    console.error(error);
-
-    list.innerHTML =
-      "❌ અરજીઓ લોડ કરવામાં ભૂલ આવી: " +
-      error.message;
-
+  <!-- APPROVE -->
+  ${
+    status !== "Approved"
+      ? `
+        <button
+          type="button"
+          data-app-action="approve"
+          data-id="${encodeURIComponent(docSnap.id)}"
+          data-service="${encodeURIComponent(service)}"
+          data-list-id="${encodeURIComponent(listId)}"
+          data-search-id="${encodeURIComponent(searchId)}"
+          style="
+            width:100%;
+            padding:11px 8px;
+            border:0;
+            border-radius:8px;
+            background:#198754;
+            color:white;
+            font-weight:600;
+          "
+        >
+          ✅ Approve
+        </button>
+      `
+      : ""
   }
 
-}
 
-loadIncomeApplications();
+  <!-- REJECT -->
+  ${
+    status !== "Rejected"
+      ? `
+        <button
+          type="button"
+          data-app-action="reject"
+          data-id="${encodeURIComponent(docSnap.id)}"
+          data-service="${encodeURIComponent(service)}"
+          data-list-id="${encodeURIComponent(listId)}"
+          data-search-id="${encodeURIComponent(searchId)}"
+          style="
+            width:100%;
+            padding:11px 8px;
+            border:0;
+            border-radius:8px;
+            background:#dc3545;
+            color:white;
+            font-weight:600;
+          "
+        >
+          ❌ Reject
+        </button>
+      `
+      : ""
+  }
 
-/*=========================================
-  SEARCH INCOME APPLICATIONS
-=========================================*/
 
-const incomeSearch =
-  document.getElementById("searchIncomeApplications");
+  <!-- DELETE -->
+  <button
+    type="button"
+    data-app-action="delete"
+    data-id="${encodeURIComponent(docSnap.id)}"
+    data-service="${encodeURIComponent(service)}"
+    data-list-id="${encodeURIComponent(listId)}"
+    data-search-id="${encodeURIComponent(searchId)}"
+    style="
+      width:100%;
+      padding:11px 8px;
+      border:0;
+      border-radius:8px;
+      background:#6c757d;
+      color:white;
+      font-weight:600;
+    "
+  >
+    🗑️ Delete
+  </button>
 
-incomeSearch?.addEventListener("input", () => {
+</div>
 
-  const searchText =
-    incomeSearch.value.trim().toLowerCase();
-
-  const items =
-    document.querySelectorAll(
-      "#incomeApplicationsList .admin-item"
-    );
-
-  items.forEach(item => {
-
-    const text =
-      item.innerText.toLowerCase();
-
-    item.style.display =
-      text.includes(searchText)
-        ? "block"
-        : "none";
-
-  });
+  </div>
+`;
 
 });
+      
+    if (!html) {
 
-/*=========================================
-  APPROVE INCOME APPLICATION
-=========================================*/
+      html = `
+        <p
+          style="
+            text-align:center;
+            padding:20px;
+          "
+        >
+          📭 હાલમાં કોઈ અરજી નથી.
+        </p>
+      `;
+    }
 
-async function approveIncomeApplication(id) {
 
-  const ok = confirm(
-    "શું તમે આ આવક પ્રમાણપત્રની અરજી Approve કરવા માંગો છો?"
-  );
-
-  if (!ok) return;
-
-  try {
-
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-        status: "Approved"
-      }
-    );
-
-    alert(
-      "✅ આવક પ્રમાણપત્રની અરજી Approved થઈ ગઈ."
-    );
-
-    loadIncomeApplications();
+    list.innerHTML =
+      html;
 
   } catch (error) {
 
-    console.error(error);
-
-    alert(
-      "Approve કરવામાં ભૂલ આવી: " +
-      error.message
+    console.error(
+      "APPLICATION LOAD ERROR:",
+      error
     );
 
+    list.innerHTML = `
+      <p style="color:red">
+        ❌ અરજી લોડ કરવામાં ભૂલ:
+        ${appSafe(error.message)}
+      </p>
+    `;
   }
-
 }
 
-window.approveIncomeApplication =
-  approveIncomeApplication;
 
+/* =========================================================
+   BIRTH
+========================================================= */
 
-/*=========================================
-  REJECT INCOME APPLICATION
-=========================================*/
+async function loadBirthApplicationsFixed() {
 
-async function rejectIncomeApplication(id) {
-
-  const reason = prompt(
-    "Reject કરવાનું કારણ લખો:"
+  await loadServiceApplications(
+    "birth",
+    "birthApplicationsList",
+    "searchBirthApplications",
+    "જન્મ પ્રમાણપત્ર અરજી",
+    "🟢"
   );
 
-  if (reason === null) return;
-
-  try {
-
-    await updateDoc(
-      doc(db, "applications", id),
-      {
-        status: "Rejected",
-        rejectionReason: reason
-      }
-    );
-
-    alert(
-      "❌ આવક પ્રમાણપત્રની અરજી Reject થઈ ગઈ."
-    );
-
-    loadIncomeApplications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Reject કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
-
 }
 
-window.rejectIncomeApplication =
-  rejectIncomeApplication;
 
+/* =========================================================
+   DEATH
+========================================================= */
 
-/*=========================================
-  DELETE INCOME APPLICATION
-=========================================*/
+async function loadDeathApplicationsFixed() {
 
-async function deleteIncomeApplication(id) {
-
-  const ok = confirm(
-    "⚠️ શું તમે આ આવક પ્રમાણપત્રની અરજી કાયમ માટે Delete કરવા માંગો છો?"
+  await loadServiceApplications(
+    "death",
+    "deathApplicationsList",
+    "searchDeathApplications",
+    "મૃત્યુ પ્રમાણપત્ર અરજી",
+    "⚰️"
   );
 
-  if (!ok) return;
+}
 
-  try {
 
-    await deleteDoc(
-      doc(db, "applications", id)
-    );
+/* =========================================================
+   INCOME
+========================================================= */
 
-    alert(
-      "🗑️ આવક પ્રમાણપત્રની અરજી Delete થઈ ગઈ."
-    );
+async function loadIncomeApplicationsFixed() {
 
-    loadIncomeApplications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "Delete કરવામાં ભૂલ આવી: " +
-      error.message
-    );
-
-  }
+  await loadServiceApplications(
+    "income",
+    "incomeApplicationsList",
+    "searchIncomeApplications",
+    "આવક પ્રમાણપત્ર અરજી",
+    "💰"
+  );
 
 }
 
-window.deleteIncomeApplication =
-  deleteIncomeApplication;
-  
-  /*=========================================
-  VIEW INCOME APPLICATION
-=========================================*/
 
-async function viewIncomeApplication(id) {
+/* =========================================================
+   COMPLAINT
+========================================================= */
+
+async function loadComplaintApplicationsFixed() {
+
+  await loadServiceApplications(
+    "complaint",
+    "complaintApplicationsList",
+    "searchComplaintApplications",
+    "ફરિયાદ અરજી",
+    "📝"
+  );
+
+}
+
+
+/* =========================================================
+   VIEW
+========================================================= */
+
+async function applicationViewFixed(id) {
 
   try {
 
@@ -4166,36 +5946,33 @@ async function viewIncomeApplication(id) {
 
     if (!snap.exists()) {
 
-      alert("અરજી મળી નથી.");
+      alert(
+        "❌ અરજી મળી નથી."
+      );
 
       return;
     }
 
-    const data = snap.data();
-
-    const income =
-      data.incomeData || {};
+    const data =
+      snap.data();
 
     alert(
-`💰 આવક પ્રમાણપત્ર અરજી
+`📄 અરજી વિગતો
 
 અરજી નંબર:
 ${data.applicationNo || "-"}
 
-અરજદારનું નામ:
-${income.incomeApplicantName || data.name || "-"}
+નામ:
+${data.name || "-"}
 
-મોબાઈલ:
+મોબાઇલ:
 ${data.mobile || "-"}
 
-સરનામું:
-${income.incomeAddress || "-"}
+સેવા:
+${data.service || "-"}
 
 સ્થિતિ:
-${data.status || "Pending"}
-
-Reject કારણ:
-${data.rejectionReason || "-"}`
+${data.status || "Pending"}`
     );
 
   } catch (error) {
@@ -4203,13 +5980,617 @@ ${data.rejectionReason || "-"}`
     console.error(error);
 
     alert(
-      "View કરવામાં ભૂલ આવી: " +
+      "❌ અરજી જોવામાં ભૂલ:\n" +
       error.message
+    );
+  }
+}
+
+window.applicationViewFixed =
+  applicationViewFixed;
+
+
+/* =========================================================
+   APPROVE
+========================================================= */
+
+async function applicationApproveFixed(
+  id,
+  service,
+  listId,
+  searchId
+) {
+
+  const ok =
+    confirm(
+      "શું તમે આ અરજી Approve કરવા માંગો છો?"
+    );
+
+  if (!ok) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Approved",
+        updatedAt:
+          serverTimestamp()
+      }
+    );
+
+
+    alert(
+      "✅ અરજી Approved થઈ ગઈ."
+    );
+
+
+    await reloadApplicationSection(
+      service,
+      listId,
+      searchId
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "❌ Approve કરવામાં ભૂલ:\n" +
+      error.message
+    );
+  }
+}
+
+window.applicationApproveFixed =
+  applicationApproveFixed;
+
+
+/* =========================================================
+   REJECT
+========================================================= */
+
+async function applicationRejectFixed(
+  id,
+  service,
+  listId,
+  searchId
+) {
+
+  const reason =
+    prompt(
+      "❌ Reject કરવાનું કારણ લખો:"
+    );
+
+  if (
+    reason === null ||
+    !reason.trim()
+  ) {
+    return;
+  }
+
+
+  try {
+
+    await updateDoc(
+      doc(db, "applications", id),
+      {
+        status: "Rejected",
+        rejectionReason:
+          reason.trim(),
+        updatedAt:
+          serverTimestamp()
+      }
+    );
+
+
+    alert(
+      "❌ અરજી Reject થઈ ગઈ."
+    );
+
+
+    await reloadApplicationSection(
+      service,
+      listId,
+      searchId
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "❌ Reject કરવામાં ભૂલ:\n" +
+      error.message
+    );
+  }
+}
+
+window.applicationRejectFixed =
+  applicationRejectFixed;
+
+
+/* =========================================================
+   DELETE
+========================================================= */
+
+async function applicationDeleteFixed(
+  id,
+  service,
+  listId,
+  searchId
+) {
+
+  const ok =
+    confirm(
+      "⚠️ શું તમે આ અરજી Delete કરવા માંગો છો?"
+    );
+
+  if (!ok) return;
+
+
+  try {
+
+    await deleteDoc(
+      doc(db, "applications", id)
+    );
+
+
+    alert(
+      "🗑️ અરજી Delete થઈ ગઈ."
+    );
+
+
+    await reloadApplicationSection(
+      service,
+      listId,
+      searchId
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "❌ Delete કરવામાં ભૂલ:\n" +
+      error.message
+    );
+  }
+}
+
+window.applicationDeleteFixed =
+  applicationDeleteFixed;
+
+
+/* =========================================================
+   RELOAD
+========================================================= */
+
+async function reloadApplicationSection(
+  service,
+  listId,
+  searchId
+) {
+
+  if (service === "birth") {
+
+    await loadBirthApplicationsFixed();
+
+  }
+
+  else if (service === "death") {
+
+    await loadDeathApplicationsFixed();
+
+  }
+
+  else if (service === "income") {
+
+    await loadIncomeApplicationsFixed();
+
+  }
+
+  else if (service === "complaint") {
+
+    await loadComplaintApplicationsFixed();
+
+  }
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+document
+  .getElementById(
+    "searchBirthApplications"
+  )
+  ?.addEventListener(
+    "input",
+    loadBirthApplicationsFixed
+  );
+
+
+document
+  .getElementById(
+    "searchDeathApplications"
+  )
+  ?.addEventListener(
+    "input",
+    loadDeathApplicationsFixed
+  );
+
+
+document
+  .getElementById(
+    "searchIncomeApplications"
+  )
+  ?.addEventListener(
+    "input",
+    loadIncomeApplicationsFixed
+  );
+
+
+document
+  .getElementById(
+    "searchComplaintApplications"
+  )
+  ?.addEventListener(
+    "input",
+    loadComplaintApplicationsFixed
+  );
+
+
+/* =========================================================
+   INITIAL LOAD
+========================================================= */
+
+loadBirthApplicationsFixed();
+loadDeathApplicationsFixed();
+loadIncomeApplicationsFixed();
+loadComplaintApplicationsFixed();
+
+console.log(
+  "✅ Application sections loaded successfully"
+);
+
+/* =========================================================
+   APPLICATION BUTTON CLICK HANDLER
+========================================================= */
+
+document.addEventListener("click", async function (event) {
+
+  const button =
+    event.target.closest("[data-app-action]");
+
+  if (!button) return;
+
+  const action =
+    button.dataset.appAction || "";
+
+  const id =
+    decodeURIComponent(
+      button.dataset.id || ""
+    );
+
+  const service =
+    decodeURIComponent(
+      button.dataset.service || ""
+    );
+
+  const listId =
+    decodeURIComponent(
+      button.dataset.listId || ""
+    );
+
+  const searchId =
+    decodeURIComponent(
+      button.dataset.searchId || ""
+    );
+
+  console.log("APPLICATION BUTTON:", {
+    action,
+    id,
+    service,
+    listId,
+    searchId
+  });
+
+  if (!id) {
+    console.error("❌ Application ID missing");
+    return;
+  }
+
+  try {
+
+    /* VIEW */
+    if (action === "view") {
+
+      await applicationViewFixed(id);
+
+      return;
+    }
+
+
+    /* APPROVE */
+    if (action === "approve") {
+
+      await applicationApproveFixed(
+        id,
+        service,
+        listId,
+        searchId
+      );
+
+      return;
+    }
+
+
+    /* REJECT */
+    if (action === "reject") {
+
+      await applicationRejectFixed(
+        id,
+        service,
+        listId,
+        searchId
+      );
+
+      return;
+    }
+
+
+    /* DELETE */
+    if (action === "delete") {
+
+      await applicationDeleteFixed(
+        id,
+        service,
+        listId,
+        searchId
+      );
+
+      return;
+    }
+
+  } catch (error) {
+
+    console.error(
+      "❌ APPLICATION BUTTON ERROR:",
+      error
+    );
+
+    alert(
+      "❌ કાર્યવાહી કરવામાં ભૂલ:\n" +
+      error.message
+    );
+
+  }
+
+});
+
+/* =========================================================
+   TAX PAYMENT - REJECT FIX
+   ADD ONLY AT THE VERY END OF admin.js
+========================================================= */
+
+async function rejectTaxPaymentFixed(paymentId) {
+
+  const ok = confirm(
+    "⚠️ શું આ Tax Payment Reject કરવી છે?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    await updateDoc(
+      doc(db, "taxPayments", paymentId),
+      {
+        status: "Rejected",
+        rejectedAt: serverTimestamp()
+      }
+    );
+
+    alert(
+      "❌ Tax Payment Rejected થઈ ગઈ."
+    );
+
+    if (typeof loadTaxPayments === "function") {
+      await loadTaxPayments();
+    }
+
+    if (typeof refreshDashboard === "function") {
+      await refreshDashboard();
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Tax Payment Reject Error:",
+      error
+    );
+
+    alert(
+      "❌ Tax Payment Reject કરવામાં ભૂલ:\n" +
+      error.message
+    );
+  }
+}
+
+window.rejectTaxPaymentFixed =
+  rejectTaxPaymentFixed;
+
+/* =========================================================
+   NEW TAX PAYMENT NOTIFICATION
+========================================================= */
+
+async function checkNewTaxPayments() {
+
+  try {
+
+    const snapshot = await getDocs(
+      query(
+        collection(db, "taxPayments"),
+        where("status", "==", "Pending")
+      )
+    );
+
+    const notification =
+      document.getElementById("paymentNotification");
+
+    if (!notification) return;
+
+    const count = snapshot.size;
+
+    if (count > 0) {
+
+      notification.style.display = "block";
+
+      notification.innerHTML = `
+        🔔 <b>${count}</b> Tax Payment
+        Pending છે.
+        <br>
+        <span style="font-size:14px;">
+          Verification sectionમાં જઈને તપાસો.
+        </span>
+      `;
+
+    } else {
+
+      notification.style.display = "none";
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Payment Notification Error:",
+      error
     );
 
   }
 
 }
 
-window.viewIncomeApplication =
-  viewIncomeApplication;
+window.checkNewTaxPayments =
+  checkNewTaxPayments;
+
+
+/* Initial check */
+
+checkNewTaxPayments();
+
+/* =========================================================
+   ADVANCED DASHBOARD COUNTERS
+========================================================= */
+
+async function loadAdvancedDashboard() {
+
+  try {
+
+    const snapshot = await getDocs(
+      collection(db, "taxPayments")
+    );
+
+    let pending = 0;
+    let approved = 0;
+    let rejected = 0;
+    let totalAmount = 0;
+    let approvedAmount = 0;
+
+    snapshot.forEach((docSnap) => {
+
+      const data = docSnap.data();
+
+      const amount =
+        Number(
+          data.amount ||
+          data.paymentAmount ||
+          data.taxAmount ||
+          0
+        );
+
+      totalAmount += amount;
+
+      if (data.status === "Pending") {
+        pending++;
+      }
+
+      if (data.status === "Approved") {
+        approved++;
+        approvedAmount += amount;
+      }
+
+      if (data.status === "Rejected") {
+        rejected++;
+      }
+
+    });
+
+    /* Payment counts */
+
+    const pendingEl =
+      document.getElementById("pendingPaymentCount");
+
+    const approvedEl =
+      document.getElementById("approvedPaymentCount");
+
+    const rejectedEl =
+      document.getElementById("rejectedPaymentCount");
+
+    const totalAmountEl =
+      document.getElementById("totalTaxPaymentAmount");
+
+    const approvedAmountEl =
+      document.getElementById("approvedTaxAmount");
+
+    if (pendingEl)
+      pendingEl.textContent = pending;
+
+    if (approvedEl)
+      approvedEl.textContent = approved;
+
+    if (rejectedEl)
+      rejectedEl.textContent = rejected;
+
+    if (totalAmountEl)
+      totalAmountEl.textContent =
+        "₹ " + totalAmount.toLocaleString("en-IN");
+
+    if (approvedAmountEl)
+      approvedAmountEl.textContent =
+        "₹ " + approvedAmount.toLocaleString("en-IN");
+
+
+    console.log(
+      "📊 Advanced Dashboard:",
+      {
+        pending,
+        approved,
+        rejected,
+        totalAmount,
+        approvedAmount
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Advanced Dashboard Error:",
+      error
+    );
+
+  }
+
+}
+
+window.loadAdvancedDashboard =
+  loadAdvancedDashboard;
+
+
+/* Initial Load */
+
+loadAdvancedDashboard();

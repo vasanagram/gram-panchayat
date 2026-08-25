@@ -32,6 +32,18 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 
 <li><a href="#website"><i class="fa fa-globe"></i> Website Settings</a></li>
 
+<li>
+  <a href="#villageInfo">
+    <i class="fa fa-house"></i> ગામની માહિતી
+  </a>
+</li>
+
+<li>
+  <a href="#contacts">
+    <i class="fa fa-address-book"></i> સંપર્ક
+  </a>
+</li>
+
 <li><a href="#members"><i class="fa fa-users"></i> Members</a></li>
 
 <li><a href="#notice"><i class="fa fa-bullhorn"></i> Notice</a></li>
@@ -248,6 +260,188 @@ width="120">
 
 </section>
 
+<!-- =========================
+     Village Information
+========================== -->
+
+<section id="villageInfo" class="admin-section">
+
+  <h2>🏡 ગામની માહિતી</h2>
+
+  <form id="villageInfoForm">
+
+    <input
+      type="text"
+      id="villagePopulation"
+      placeholder="વસ્તી"
+    >
+
+    <input
+      type="text"
+      id="villageHouses"
+      placeholder="કુલ મકાન"
+    >
+
+    <input
+      type="text"
+      id="villageSchool"
+      placeholder="પ્રાથમિક શાળા"
+    >
+
+    <input
+      type="text"
+      id="villageTemple"
+      placeholder="મંદિર"
+    >
+
+    <textarea
+      id="villageHistory"
+      placeholder="ગામનો પરિચય"
+      rows="5"
+    ></textarea>
+
+    <button type="submit">
+      💾 ગામની માહિતી સેવ કરો
+    </button>
+
+<button
+  type="button"
+  onclick="deleteVillageInfo()"
+  style="margin-top:10px;">
+  🗑️ ગામની સંપૂર્ણ માહિતી Delete કરો
+</button>
+
+  </form>
+
+</section>
+
+<!-- =========================
+     Contact Management
+========================== -->
+
+<section id="contacts" class="admin-section">
+
+  <h2>📞 સંપર્ક વ્યવસ્થાપન</h2>
+
+  <form id="contactForm">
+
+    <input
+      type="text"
+      id="contactName"
+      placeholder="નામ"
+      required
+    >
+
+    <input
+      type="text"
+      id="contactPosition"
+      placeholder="હોદ્દો - સરપંચશ્રી / તલાટી / ગ્રામ સેવક / VCE"
+      required
+    >
+
+    <input
+      type="tel"
+      id="contactMobile"
+      placeholder="મોબાઈલ નંબર"
+    >
+
+    <input
+      type="email"
+      id="contactEmail"
+      placeholder="Email Address"
+    >
+
+    <button type="submit">
+      ➕ સંપર્ક ઉમેરો
+    </button>
+
+  </form>
+
+  <hr>
+
+  <h3>📋 સંપર્કોની યાદી</h3>
+
+  <div id="contactList">
+    સંપર્ક અહીં દેખાશે.
+  </div>
+
+<!-- Contact Edit Popup -->
+
+<div
+  id="contactEditPopup"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:9999;
+    align-items:center;
+    justify-content:center;
+  "
+>
+
+  <div
+    style="
+      background:#fff;
+      width:90%;
+      max-width:500px;
+      padding:20px;
+      border-radius:15px;
+    "
+  >
+
+    <h2>✏️ સંપર્ક Edit કરો</h2>
+
+    <input
+      type="text"
+      id="editContactName"
+      placeholder="નામ"
+      style="width:100%;"
+    >
+
+    <input
+      type="text"
+      id="editContactPosition"
+      placeholder="હોદ્દો"
+      style="width:100%;"
+    >
+
+    <input
+      type="tel"
+      id="editContactMobile"
+      placeholder="મોબાઈલ નંબર"
+      style="width:100%;"
+    >
+
+    <input
+      type="email"
+      id="editContactEmail"
+      placeholder="Email Address"
+      style="width:100%;"
+    >
+
+    <div style="margin-top:15px;">
+
+      <button
+        type="button"
+        id="updateContactBtn">
+        💾 Update
+      </button>
+
+      <button
+        type="button"
+        onclick="closeContactEdit()">
+        ❌ Cancel
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+</section>
+
 <!-- Members -->
 
 <section id="members" class="admin-section">
@@ -301,15 +495,58 @@ width="120">
 
 <h2>ફોટો ગેલેરી</h2>
 
+
 <form id="galleryForm">
 
-<input type="text" id="galleryTitle" placeholder="ફોટો શીર્ષક">
+  <label>📁 Album Name</label>
 
-<input type="file" id="galleryImageFile" accept="image/*">
+  <input
+    type="text"
+    id="galleryAlbum"
+    placeholder="જેમ કે: 15 ઓગસ્ટ કાર્યક્રમ"
+    required
+  >
 
-<img id="galleryPreview" width="120" style="margin-top:10px;border-radius:8px;">
+  <label>🏷️ Event Name</label>
 
-<button type="submit">ફોટો ઉમેરો</button>
+  <input
+    type="text"
+    id="galleryEventName"
+    placeholder="કાર્યક્રમનું નામ"
+    required
+  >
+
+  <label>📅 Event Date</label>
+
+  <input
+    type="date"
+    id="galleryDate"
+    required
+  >
+
+  <label>🖼️ Multiple Photos</label>
+
+  <input
+    type="file"
+    id="galleryImageFile"
+    accept="image/*"
+    multiple
+    required
+  >
+
+  <img
+    id="galleryPreview"
+    style="
+      max-width:200px;
+      max-height:150px;
+      margin-top:10px;
+      border-radius:10px;
+    "
+  >
+
+  <button type="submit">
+    📤 Galleryમાં Photos Upload કરો
+  </button>
 
 </form>
 
@@ -366,6 +603,25 @@ width="120">
 
   <div id="incomeApplicationsList">
     આવક પ્રમાણપત્રની અરજીઓ અહીં દેખાશે.
+  </div>
+
+</section>
+
+<!-- Complaint Applications -->
+
+<section class="admin-section">
+
+  <h2>📝 ફરિયાદ અરજીઓ</h2>
+
+  <input
+    type="text"
+    id="searchComplaintApplications"
+    placeholder="🔍 નામ અથવા અરજી નંબરથી શોધો..."
+    style="width:100%;padding:10px;margin-bottom:15px;"
+  >
+
+  <div id="complaintApplicationsList">
+    ફરિયાદની અરજીઓ અહીં દેખાશે.
   </div>
 
 </section>
@@ -456,49 +712,294 @@ width="120">
 
 </section>
 
-<h2>📄 Online Applications</h2>
 
+<!-- =========================================
+     CENTRAL ONLINE APPLICATION MANAGEMENT
+========================================= -->
+
+<h2>📄 Online Application Management</h2>
+
+<!-- SEARCH -->
 <input
   type="text"
   id="searchApplication"
-  placeholder="અરજી નંબર અથવા નામ શોધો..."
+  placeholder="🔍 અરજી નંબર, નામ અથવા મોબાઇલ શોધો..."
   onkeyup="searchApplications()"
-  style="width:100%;padding:10px;margin:10px 0;">
+  style="
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:1px solid #ddd;
+    border-radius:8px;
+  ">
+
+<!-- FILTERS -->
+
+<div style="
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+">
+
+  <!-- STATUS -->
+  <select
+    id="applicationStatusFilter"
+    onchange="loadApplications()"
+    style="
+      padding:10px;
+      border:1px solid #ddd;
+      border-radius:8px;
+    ">
+
+    <option value="">બધી સ્થિતિ</option>
+    <option value="Pending">🟡 Pending</option>
+    <option value="Approved">🟢 Approved</option>
+    <option value="Rejected">🔴 Rejected</option>
+
+  </select>
+
+
+  <!-- SERVICE -->
+
+  <select
+    id="applicationServiceFilter"
+    onchange="loadApplications()"
+    style="
+      padding:10px;
+      border:1px solid #ddd;
+      border-radius:8px;
+    ">
+
+    <option value="">બધી સેવાઓ</option>
+
+    <option value="birth">
+      જન્મ પ્રમાણપત્ર
+    </option>
+
+    <option value="death">
+      મૃત્યુ પ્રમાણપત્ર
+    </option>
+
+    <option value="income">
+      આવક દાખલો
+    </option>
+
+    <option value="residence">
+      રહેઠાણ દાખલો
+    </option>
+
+    <option value="property">
+      મિલકત આકારણી
+    </option>
+
+    <option value="tax">
+      ટેક્સ
+    </option>
+
+    <option value="complaint">
+      ફરિયાદ
+    </option>
+
+  </select>
+
+</div>
+
+
+<!-- APPLICATION TABLE -->
+
 <div class="table-responsive">
+
 <table border="1" width="100%">
+
   <thead>
+
     <tr>
+
       <th>અરજી નંબર</th>
+
       <th>સેવા</th>
+
       <th>નામ</th>
+
       <th>મોબાઇલ</th>
+
+      <th>મિલકત નંબર</th>
+
       <th>સ્થિતિ</th>
+
       <th>દસ્તાવેજ</th>
+
       <th>View</th>
+
       <th>Action</th>
+
     </tr>
+
   </thead>
 
-  <tbody id="applicationsList"></tbody>
+
+  <tbody id="applicationsList">
+
+    <tr>
+
+      <td colspan="9"
+        style="text-align:center;padding:20px;">
+
+        ⏳ અરજીઓ લોડ થઈ રહી છે...
+
+      </td>
+
+    </tr>
+
+  </tbody>
+
 </table>
+
 </div>
+  
 <!-- Government Schemes -->
+
+<!-- =========================
+     સરકારી યોજનાઓ
+========================= -->
 
 <section id="schemes" class="admin-section">
 
-<h2>સરકારી યોજનાઓ</h2>
+  <h2>સરકારી યોજનાઓ</h2>
 
-<form id="schemeForm">
+  <form id="schemeForm">
 
-<input type="text" id="schemeTitle" placeholder="યોજનાનું નામ">
+    <!-- યોજનાનું નામ -->
+    <input
+      type="text"
+      id="schemeTitle"
+      placeholder="યોજનાનું નામ"
+      required
+    >
 
-<textarea id="schemeDescription" placeholder="વિગત"></textarea>
+    <!-- યોજનાની વિગત -->
+    <textarea
+      id="schemeDescription"
+      placeholder="યોજનાની વિગત"
+      required
+    ></textarea>
 
-<button type="submit">યોજના ઉમેરો</button>
+    <!-- સરકારી Website Link -->
+    <input
+      type="url"
+      id="schemeLink"
+      placeholder="સરકારી Website Link"
+    >
 
-</form>
+    <button type="submit">
+      ➕ યોજના ઉમેરો
+    </button>
 
-<div id="schemeList"></div>
+  </form>
+
+  <!-- યોજનાઓ અહીં દેખાશે -->
+  <div id="schemeList"></div>
+
+</section>
+
+<!-- =========================
+     ગામની વધારાની માહિતી
+========================== -->
+
+<section class="admin-section">
+
+  <h2>🏡 ગામની વધારાની માહિતી</h2>
+
+  <form id="villageExtraForm">
+
+    <input
+      type="text"
+      id="villageExtraTitle"
+      placeholder="માહિતીનું શીર્ષક"
+      required
+    >
+
+    <textarea
+      id="villageExtraDescription"
+      placeholder="માહિતીની વિગત"
+      rows="4"
+      required
+    ></textarea>
+
+    <button type="submit">
+      ➕ માહિતી ઉમેરો
+    </button>
+
+  </form>
+
+  <hr>
+
+  <div id="villageExtraList">
+    માહિતી અહીં દેખાશે.
+  </div>
+
+<!-- Village Extra Edit Popup -->
+
+<div
+  id="villageExtraEditPopup"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:9999;
+    align-items:center;
+    justify-content:center;
+  "
+>
+
+  <div
+    style="
+      background:#fff;
+      width:90%;
+      max-width:500px;
+      padding:20px;
+      border-radius:15px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    "
+  >
+
+    <h2>✏️ ગામની માહિતી Edit</h2>
+
+    <input
+      type="text"
+      id="editVillageExtraTitle"
+      placeholder="માહિતીનું શીર્ષક"
+      style="width:100%;"
+    >
+
+    <textarea
+      id="editVillageExtraDescription"
+      placeholder="માહિતીની વિગત"
+      rows="5"
+      style="width:100%;"
+    ></textarea>
+
+    <div style="margin-top:15px;">
+
+      <button
+        type="button"
+        id="updateVillageExtraBtn">
+        💾 Update
+      </button>
+
+      <button
+        type="button"
+        onclick="closeVillageExtraEdit()">
+        ❌ Cancel
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
 
 </section>
 
@@ -512,9 +1013,6 @@ width="120">
 
 </section>
 
-<section id="property" class="admin-section">
-
-<section id="property" class="admin-section">
 
 <!-- Property Tax Management -->
 
@@ -547,11 +1045,49 @@ type="text"
 id="ownerMobile"
 placeholder="મોબાઇલ નંબર">
 
+<h3>💰 વેરાની વિગત</h3>
+
 <input
 type="number"
-id="taxAmount"
-placeholder="વેરાની રકમ"
-required>
+id="previousDue"
+placeholder="પાછલી બાકી રકમ"
+value="0"
+min="0">
+
+<input
+type="number"
+id="houseTax"
+placeholder="ઘર વેરો"
+value="0"
+min="0">
+
+<input
+type="number"
+id="waterTax"
+placeholder="પાણી વેરો"
+value="0"
+min="0">
+
+<input
+type="number"
+id="cleaningTax"
+placeholder="સફાઈ વેરો"
+value="0"
+min="0">
+
+<input
+type="number"
+id="drainageTax"
+placeholder="ગટર વેરો"
+value="0"
+min="0">
+
+<input
+type="number"
+id="otherTax"
+placeholder="અન્ય વેરો"
+value="0"
+min="0">
 
 <input
 type="text"
@@ -574,32 +1110,6 @@ id="propertyTaxSubmitBtn">
 
 <hr>
 
-<h3>📄 eGram PDF Import</h3>
-
-<input
-type="file"
-id="taxPdfFiles"
-accept=".pdf"
-multiple>
-
-<button
-type="button"
-id="importTaxPdf">
-📥 eGram PDF Import કરો
-</button>
-
-<div
-id="importProgress"
-style="margin-top:15px;">
-</div>
-
-<div
-id="importResult"
-style="margin-top:10px;">
-</div>
-
-<hr>
-
 <h3>📊 Excel Import</h3>
 
 <input
@@ -609,10 +1119,63 @@ accept=".xlsx,.xls"
 multiple>
 
 <button
-type="button"
-id="importExcelBtn">
-📥 Excel Import કરો
+  type="button"
+  id="importExcelBtn">
+  📥 Excel Import કરો
 </button>
+
+<button
+  type="button"
+  onclick="globalThis.checkPropertyTaxImports()"
+  style="
+    background:#6f42c1;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    margin:8px 0;
+    font-size:16px;
+  "
+>
+  🔍 Property Data Check કરો
+</button>
+
+<div
+id="excelImportList"
+style="
+margin-top:15px;
+">
+</div>
+
+<button
+  type="button"
+  onclick="globalThis.cleanOldPropertyData()"
+  style="
+    background:#dc3545;
+    color:white;
+    border:none;
+    padding:10px 16px;
+    border-radius:8px;
+    font-weight:bold;
+  "
+>
+  🗑️ જૂનો Property Data Clean કરો
+</button>
+  
+<div
+  id="importProgress"
+  style="
+    margin-top:15px;
+    padding:10px;
+    font-weight:bold;
+    color:#1565c0;
+  ">
+</div>
+
+<div
+  id="importResult"
+  style="margin-top:15px;">
+</div>
 
 <hr>
 
@@ -620,6 +1183,21 @@ id="importExcelBtn">
 type="text"
 id="searchPropertyTax"
 placeholder="મિલકત નંબર અથવા ઘર નંબર શોધો">
+
+<div
+  id="totalPropertyRecords"
+  style="
+    margin:10px 0;
+    padding:12px;
+    background:#e8f5e9;
+    border:2px solid #198754;
+    border-radius:10px;
+    font-size:18px;
+    color:#198754;
+  "
+>
+  📊 કુલ Property Records : 0
+</div>
 
 <h3>📋 Payment History</h3>
 
@@ -781,6 +1359,11 @@ Logout
       <td id="pService"></td>
     </tr>
 
+<tr>
+  <td>મિલકત નંબર</td>
+  <td id="pPropertyNo">-</td>
+</tr>
+
     <tr>
       <td>સ્થિતિ</td>
       <td id="pStatus"></td>
@@ -819,13 +1402,30 @@ Logout
 
 <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 
-<script type="module" src="admin.js?v=20260731"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<script type="module" src="property-import.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<script type="module" src="admin.js?v=20260823"></script>
+
+  <script type="module" src="admin-features.js"></script>
+
+<script type="module" src="admin-notifications.js"></script>
+
+<script type="module" src="admin-application-print.js?v=20260824"></script>
+
+  <script
+  type="module"
+  src="admin-activity-log.js?v=20260824">
+  </script>
+
+  <script
+  type="module"
+  src="admin-notice-manager.js?v=20260824">
+  </script>
+
+<script type="module" src="admin-recovered-missing.js"></script>
+  
 </body>
 </html>
+
