@@ -1,69 +1,131 @@
 import { auth } from "./firebase-config.js";
 
 import {
-signInWithEmailAndPassword,
-onAuthStateChanged
+  signInWithEmailAndPassword,
+  signOut
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-// પહેલેથી Login હોય તો સીધા Admin Panel
-onAuthStateChanged(auth,(user)=>{
 
-if(user){
+// ==========================================
+// FORCE LOGIN
+// ==========================================
 
-window.location.href="admin.html";
+const params = new URLSearchParams(
+  window.location.search
+);
 
-}
+const forceLogin =
+  params.get("force") === "1";
 
-});
 
-const loginForm=document.getElementById("loginForm");
+// Admin button પરથી આવીએ ત્યારે
+// જૂનું Firebase login session clear કરો
+if (forceLogin) {
 
-loginForm?.addEventListener("submit",async(e)=>{
+  try {
 
-e.preventDefault();
+    await signOut(auth);
 
-const email=document.getElementById("email").value.trim();
+  } catch (error) {
 
-const password=document.getElementById("password").value.trim();
+    console.warn(
+      "જૂનું login session clear કરવામાં સમસ્યા:",
+      error
+    );
 
-const error=document.getElementById("error");
-
-error.textContent="";
-
-try{
-
-await signInWithEmailAndPassword(auth,email,password);
-
-window.location.href="admin.html";
-
-}catch(err){
-
-switch(err.code){
-
-case "auth/invalid-credential":
-
-error.textContent="ઈમેલ અથવા પાસવર્ડ ખોટો છે.";
-
-break;
-
-case "auth/invalid-email":
-
-error.textContent="માન્ય ઈમેલ દાખલ કરો.";
-
-break;
-
-case "auth/too-many-requests":
-
-error.textContent="ઘણા પ્રયત્નો થયા છે. થોડા સમય પછી ફરી પ્રયાસ કરો.";
-
-break;
-
-default:
-
-error.textContent="લૉગિન કરવામાં સમસ્યા આવી.";
+  }
 
 }
 
-}
 
-});
+// ==========================================
+// LOGIN FORM
+// ==========================================
+
+const loginForm =
+  document.getElementById("loginForm");
+
+
+loginForm?.addEventListener(
+  "submit",
+  async (e) => {
+
+    e.preventDefault();
+
+
+    const email =
+      document
+        .getElementById("email")
+        .value
+        .trim();
+
+
+    const password =
+      document
+        .getElementById("password")
+        .value
+        .trim();
+
+
+    const error =
+      document.getElementById("error");
+
+
+    error.textContent = "";
+
+
+    try {
+
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+
+      // Login સફળ
+      window.location.href =
+        "admin.html";
+
+
+    } catch (err) {
+
+
+      switch (err.code) {
+
+
+        case "auth/invalid-credential":
+
+          error.textContent =
+            "ઈમેલ અથવા પાસવર્ડ ખોટો છે.";
+
+          break;
+
+
+        case "auth/invalid-email":
+
+          error.textContent =
+            "માન્ય ઈમેલ દાખલ કરો.";
+
+          break;
+
+
+        case "auth/too-many-requests":
+
+          error.textContent =
+            "ઘણા પ્રયત્નો થયા છે. થોડા સમય પછી ફરી પ્રયાસ કરો.";
+
+          break;
+
+
+        default:
+
+          error.textContent =
+            "લૉગિન કરવામાં સમસ્યા આવી.";
+
+      }
+
+    }
+
+  }
+);
