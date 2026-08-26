@@ -1793,3 +1793,265 @@ table td button{
   }
 
 }
+
+/* ==========================================
+   FINAL MOBILE FIX
+   આ કોડ સૌથી નીચે મૂકવો
+========================================== */
+
+@media (max-width: 768px){
+
+  /* HEADER */
+  header{
+    padding:10px 12px;
+    min-height:75px;
+    gap:8px;
+  }
+
+  .logo-area{
+    gap:8px;
+    flex:1;
+    min-width:0;
+  }
+
+  .logo-area img{
+    width:58px;
+    height:58px;
+    flex-shrink:0;
+  }
+
+  .logo-area > div{
+    min-width:0;
+  }
+
+  .logo-area h1{
+    font-size:19px;
+    line-height:1.45;
+    margin:0;
+  }
+
+  .logo-area p{
+    font-size:12px;
+    line-height:1.5;
+    margin:2px 0 0;
+  }
+
+  /* HEADER BUTTONS */
+  .header-icons{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-shrink:0;
+  }
+
+  .admin-login-btn{
+    padding:10px 12px;
+    font-size:15px;
+    border-radius:10px;
+    white-space:nowrap;
+  }
+
+  .header-icons button{
+    width:42px;
+    height:42px;
+    font-size:17px;
+    flex-shrink:0;
+  }
+
+  /* MOBILE MENU */
+  nav{
+    position:absolute;
+    top:100%;
+    left:0;
+    width:100%;
+    display:none;
+    flex-direction:column;
+    gap:0;
+    background:#fff;
+    padding:10px 15px;
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+  }
+
+  nav.show{
+    display:flex;
+  }
+
+  nav a{
+    padding:12px 10px;
+    border-bottom:1px solid #eee;
+  }
+
+  /* HERO */
+  #home{
+    min-height:520px;
+    height:auto;
+    padding:45px 18px;
+    background-position:center;
+  }
+
+  .hero-content{
+    width:100%;
+    max-width:100%;
+  }
+
+  .hero-content h2{
+    font-size:34px;
+    line-height:1.5;
+    margin-bottom:15px;
+  }
+
+  .hero-content p{
+    font-size:17px;
+    line-height:1.7;
+    margin-bottom:25px;
+  }
+
+  .btn{
+    width:100%;
+    max-width:420px;
+    padding:14px 20px;
+    font-size:17px;
+  }
+
+  /* SARPANCH */
+  .sarpanch-box{
+    width:100%;
+    padding:20px;
+    gap:20px;
+  }
+
+  .sarpanch-image img{
+    width:180px;
+    height:180px;
+  }
+
+  /* ALL SECTIONS */
+  .section{
+    padding:55px 15px;
+  }
+
+  .title{
+    font-size:28px;
+    line-height:1.5;
+    margin-bottom:35px;
+  }
+
+  /* CARDS */
+  .about-card,
+  .service-card,
+  .notice-card,
+  .document-card,
+  .scheme-card,
+  .contact-card{
+    padding:22px 18px;
+  }
+
+  /* GRID */
+  .about-grid,
+  .service-grid,
+  .members-grid,
+  .gallery-grid,
+  .video-grid,
+  #documentContainer,
+  #resolutionContainer,
+  #schemeContainer{
+    grid-template-columns:1fr;
+  }
+
+  /* MEMBER IMAGE */
+  .member-card img{
+    height:260px;
+  }
+
+  /* CONTACT */
+  #contactContainer{
+    grid-template-columns:1fr;
+  }
+
+  /* FLOATING BUTTONS */
+  #scrollTop,
+  #callBtn,
+  #whatsappBtn{
+    right:15px;
+    width:56px;
+    height:56px;
+  }
+
+  #whatsappBtn{
+    bottom:125px;
+  }
+
+  #callBtn{
+    bottom:55px;
+  }
+
+  #scrollTop{
+    bottom:195px;
+  }
+
+}
+
+
+/* ==========================================
+   EXTRA SMALL MOBILE
+========================================== */
+
+@media (max-width: 480px){
+
+  header{
+    padding:8px 9px;
+  }
+
+  .logo-area{
+    gap:6px;
+  }
+
+  .logo-area img{
+    width:50px;
+    height:50px;
+  }
+
+  .logo-area h1{
+    font-size:16px;
+    line-height:1.4;
+  }
+
+  .logo-area p{
+    font-size:10px;
+  }
+
+  .admin-login-btn{
+    padding:8px 9px;
+    font-size:13px;
+  }
+
+  .header-icons{
+    gap:4px;
+  }
+
+  .header-icons button{
+    width:38px;
+    height:38px;
+    font-size:16px;
+  }
+
+  #home{
+    min-height:480px;
+    padding:35px 15px;
+  }
+
+  .hero-content h2{
+    font-size:29px;
+    line-height:1.45;
+  }
+
+  .hero-content p{
+    font-size:15px;
+  }
+
+  .btn{
+    font-size:16px;
+    padding:13px 16px;
+  }
+
+}
