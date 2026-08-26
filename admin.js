@@ -3903,8 +3903,6 @@ loadPropertyTax();
 
 /* =========================================================
    PROPERTY TAX - FULL IMPORT CHECK
-   Mobile Friendly
-   કશું DELETE કરતું નથી
 ========================================================= */
 
 async function checkPropertyTaxImports() {
@@ -3919,17 +3917,14 @@ async function checkPropertyTaxImports() {
       collection(db, "propertyTaxImports")
     );
 
-
-    let total = propertySnap.size;
+    const total = propertySnap.size;
 
     let oldRecords = 0;
 
     const actualExcelRecords = {};
 
 
-    /* =====================================================
-       PROPERTY RECORDS COUNT
-    ===================================================== */
+    /* PROPERTY RECORDS COUNT */
 
     propertySnap.forEach((docSnap) => {
 
@@ -3946,9 +3941,7 @@ async function checkPropertyTaxImports() {
           data.importId;
 
         if (!actualExcelRecords[fileName]) {
-
           actualExcelRecords[fileName] = 0;
-
         }
 
         actualExcelRecords[fileName]++;
@@ -3958,12 +3951,9 @@ async function checkPropertyTaxImports() {
     });
 
 
-    /* =====================================================
-       IMPORT FILE INFORMATION
-    ===================================================== */
+    /* IMPORT FILE INFORMATION */
 
     let importText = "";
-
 
     importSnap.forEach((docSnap) => {
 
@@ -3978,7 +3968,6 @@ async function checkPropertyTaxImports() {
       const excelRows =
         data.recordCount || 0;
 
-
       importText +=
         "📄 " + fileName + "\n" +
         "Excel Records: " + excelRows + "\n" +
@@ -3987,30 +3976,21 @@ async function checkPropertyTaxImports() {
     });
 
 
-    /* =====================================================
-       SHOW RESULT
-    ===================================================== */
+    /* SHOW RESULT */
 
     const message =
-
       "📊 PROPERTY TAX CHECK\n\n" +
-
       "કુલ Property Records: " +
       total + "\n\n" +
-
       "જૂના Records: " +
       oldRecords + "\n\n" +
-
       "📂 Excel પ્રમાણે:\n\n" +
-
       importText;
 
 
     alert(message);
 
-
     console.log(message);
-
 
   } catch (error) {
 
@@ -4028,9 +4008,118 @@ async function checkPropertyTaxImports() {
 
 }
 
-
 globalThis.checkPropertyTaxImports =
   checkPropertyTaxImports;
+
+/* =========================================================
+   DELETE OLD PROPERTY TAX DATA
+   ========================================================= */
+
+async function cleanOldPropertyData() {
+
+  const ok = confirm(
+    "⚠️ જે Property Records Excel Importથી આવ્યા નથી તે બધા Delete થશે.\n\n" +
+    "શું ખરેખર Delete કરવું છે?"
+  );
+
+  if (!ok) return;
+
+  try {
+
+    const snapshot = await getDocs(
+      collection(db, "propertyTax")
+    );
+
+    // ફક્ત importId વગરના જૂના records
+    const oldDocs = snapshot.docs;
+
+    if (oldDocs.length === 0) {
+
+      alert(
+        "✅ કોઈ જૂનો Property Record મળ્યો નથી.\n\n" +
+        "બધા Records Excel Importવાળા છે."
+      );
+
+      return;
+    }
+
+    const secondConfirm = confirm(
+      "⚠️ કુલ " + oldDocs.length +
+      " જૂના Property Records મળ્યા છે.\n\n" +
+      "આ Records Delete થઈ જશે.\n\n" +
+      "શું આગળ વધવું છે?"
+    );
+
+    if (!secondConfirm) return;
+
+
+    /* =========================================
+       FIRESTORE BATCH DELETE
+       ========================================= */
+
+    // Firestore એક batchમાં વધુમાં વધુ 500 operations
+    const chunkSize = 450;
+
+    for (
+      let i = 0;
+      i < oldDocs.length;
+      i += chunkSize
+    ) {
+
+      const batch = writeBatch(db);
+
+      const chunk = oldDocs.slice(
+        i,
+        i + chunkSize
+      );
+
+      chunk.forEach(docSnap => {
+
+        batch.delete(docSnap.ref);
+
+      });
+
+      await batch.commit();
+    }
+
+
+    alert(
+      "🗑️ જૂના Property Records સફળતાપૂર્વક Delete થઈ ગયા.\n\n" +
+      "Delete થયેલા Records: " +
+      oldDocs.length
+    );
+
+
+    // Property list ફરીથી Load
+    if (typeof loadPropertyTax === "function") {
+      await loadPropertyTax();
+    }
+
+    // Dashboard count પણ update
+    if (typeof refreshDashboard === "function") {
+      await refreshDashboard();
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ OLD PROPERTY DELETE ERROR:",
+      error
+    );
+
+    alert(
+      "❌ જૂના Property Records Delete કરવામાં ભૂલ આવી:\n\n" +
+      error.message
+    );
+
+  }
+}
+
+
+// HTML button onclick માટે
+globalThis.cleanOldPropertyData =
+  cleanOldPropertyData;
 
 async function viewPaymentHistory(propertyNo){
 
