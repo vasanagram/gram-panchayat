@@ -542,13 +542,51 @@ async function recoveredImportPropertyExcel() {
       ];
 
 
-    const rows =
-      XLSX.utils.sheet_to_json(
-        worksheet,
-        {
-          defval: ""
-        }
-      );
+  const rawRows =
+  XLSX.utils.sheet_to_json(
+    worksheet,
+    {
+      header: 1,
+      defval: ""
+    }
+  );
+
+/*=====================================
+  EXCEL HEADER = ROW 3
+  DATA = ROW 4 ONWARDS
+=====================================*/
+
+const rows = rawRows
+  .slice(3)
+  .map((r) => ({
+    "પ્રોપટી નંબર":
+      r[0] ?? "",
+
+    "મકાન નંબર":
+      r[1] ?? "",
+
+    "માલિકનું નામ":
+      r[2] ?? "",
+
+    "કબજેદારનું નામ":
+      r[3] ?? "",
+
+    "કુલ":
+      r[4] ?? ""
+  }))
+  .filter((row) =>
+    Object.values(row).some(
+      value =>
+        value !== null &&
+        value !== undefined &&
+        String(value).trim() !== ""
+    )
+  );
+
+console.log(
+  "📊 Excel Rows:",
+  rows
+);
 
 
     console.log(
