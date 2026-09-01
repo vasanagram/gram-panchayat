@@ -433,18 +433,6 @@ async function recoveredPrintApplication(id) {
 }
 
 /*=========================================
-  PROPERTY TAX EXCEL IMPORT
-=========================================*/
-
-document
-  .getElementById("importExcelBtn")
-  ?.addEventListener(
-    "click",
-    recoveredImportPropertyExcel
-  );
-
-
-/*=========================================
   PROPERTY TAX EXCEL IMPORT - FINAL
 =========================================*/
 

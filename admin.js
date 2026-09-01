@@ -4031,7 +4031,9 @@ async function cleanOldPropertyData() {
     );
 
     // ફક્ત importId વગરના જૂના records
-    const oldDocs = snapshot.docs;
+    const oldDocs = snapshot.docs.filter(
+  docSnap => !docSnap.data().importId
+);
 
     if (oldDocs.length === 0) {
 
