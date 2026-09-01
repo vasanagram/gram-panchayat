@@ -7,6 +7,7 @@ import {
   addDoc,
   updateDoc,
   doc,
+  setDoc,
   serverTimestamp,
   writeBatch,
   query,
@@ -443,16 +444,28 @@ document
   );
 
 
+/*=========================================
+  PROPERTY TAX EXCEL IMPORT - FINAL
+=========================================*/
+
+document
+  .getElementById("importExcelBtn")
+  ?.addEventListener(
+    "click",
+    recoveredImportPropertyExcel
+  );
+
+
 async function recoveredImportPropertyExcel() {
 
   const input =
-    document.getElementById(
-      "taxExcelFile"
-    );
+    document.getElementById("taxExcelFile");
 
   const files =
     input?.files;
 
+
+  /* CHECK FILE */
 
   if (
     !files ||
@@ -460,47 +473,808 @@ async function recoveredImportPropertyExcel() {
   ) {
 
     alert(
-      "⚠️ Excel File પસંદ કરો."
+      "⚠️ પહેલા Excel File પસંદ કરો."
     );
 
     return;
   }
-const file = files[0];
 
-const arrayBuffer =
-  await file.arrayBuffer();
 
-const workbook =
-  XLSX.read(
-    arrayBuffer,
-    {
-      type: "array"
+  const file =
+    files[0];
+
+
+  try {
+
+    /*=====================================
+      PROGRESS
+    =====================================*/
+
+    const progress =
+      document.getElementById(
+        "importProgress"
+      );
+
+    if (progress) {
+
+      progress.innerText =
+        "⏳ Excel વાંચવામાં આવી રહી છે...";
     }
-  );
 
-const sheetName =
-  workbook.SheetNames[0];
 
-const worksheet =
-  workbook.Sheets[sheetName];
+    /*=====================================
+      READ EXCEL
+    =====================================*/
 
-const rows =
-  XLSX.utils.sheet_to_json(
-    worksheet,
-    {
-      defval: ""
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+
+    const workbook =
+      XLSX.read(
+        arrayBuffer,
+        {
+          type: "array"
+        }
+      );
+
+
+    if (
+      !workbook.SheetNames ||
+      !workbook.SheetNames.length
+    ) {
+
+      alert(
+        "❌ Excel Sheet મળી નથી."
+      );
+
+      return;
     }
-  );
 
-console.log(
-  "Excel Rows:",
-  rows
-);
 
-  alert(
-    "📊 Excel Import feature તૈયાર થઈ રહ્યું છે.\n\nહાલ Excel file પસંદ થઈ છે."
-  );
+    const sheetName =
+      workbook.SheetNames[0];
 
+
+    const worksheet =
+      workbook.Sheets[
+        sheetName
+      ];
+
+
+    const rows =
+      XLSX.utils.sheet_to_json(
+        worksheet,
+        {
+          defval: ""
+        }
+      );
+
+
+    console.log(
+      "📊 Excel Rows:",
+      rows
+    );
+
+
+    if (!rows.length) {
+
+      alert(
+        "❌ Excelમાં કોઈ Record મળ્યો નથી."
+      );
+
+      return;
+    }
+
+
+    /*=====================================
+      UNIQUE IMPORT ID
+    =====================================*/
+
+    const importId =
+      "IMPORT_" +
+      Date.now();
+
+
+    const fileName =
+      file.name;
+
+
+    /*=====================================
+      HELPERS
+    =====================================*/
+
+    function cleanValue(value) {
+
+      if (
+        value === null ||
+        value === undefined
+      ) {
+
+        return "";
+      }
+
+      return String(value)
+        .trim();
+    }
+
+
+    function numberValue(value) {
+
+      if (
+        value === null ||
+        value === undefined ||
+        value === ""
+      ) {
+
+        return 0;
+      }
+
+
+      const cleaned =
+        String(value)
+          .replace(/,/g, "")
+          .replace(/₹/g, "")
+          .trim();
+
+
+      const number =
+        Number(cleaned);
+
+
+      return isNaN(number)
+        ? 0
+        : number;
+    }
+
+
+    function findValue(
+      row,
+      possibleNames
+    ) {
+
+      const keys =
+        Object.keys(row);
+
+
+      for (
+        const key of keys
+      ) {
+
+        const normalizedKey =
+          String(key)
+            .trim()
+            .toLowerCase();
+
+
+        for (
+          const name
+          of possibleNames
+        ) {
+
+          const normalizedName =
+            String(name)
+              .trim()
+              .toLowerCase();
+
+
+          if (
+            normalizedKey ===
+            normalizedName
+          ) {
+
+            return row[key];
+          }
+        }
+      }
+
+
+      return "";
+    }
+
+
+    /*=====================================
+      PREPARE FIRESTORE RECORDS
+    =====================================*/
+
+    const propertyRecords = [];
+
+
+    for (
+      let i = 0;
+      i < rows.length;
+      i++
+    ) {
+
+      const row =
+        rows[i];
+
+
+      /*
+        PROPERTY NUMBER
+      */
+
+      const propertyNo =
+        cleanValue(
+          findValue(
+            row,
+            [
+              "propertyNo",
+              "property no",
+              "property number",
+              "મિલકત નંબર",
+              "મિલકત નં",
+              "મિલકત ક્રમાંક",
+              "મિલકત ક્રમ"
+            ]
+          )
+        );
+
+
+      /*
+        OWNER NAME
+      */
+
+      const ownerName =
+        cleanValue(
+          findValue(
+            row,
+            [
+              "ownerName",
+              "owner name",
+              "name",
+              "માલિક",
+              "માલિકનું નામ",
+              "મિલકતદારનું નામ"
+            ]
+          )
+        );
+
+
+      /*
+        HOUSE NUMBER
+      */
+
+      const houseNo =
+        cleanValue(
+          findValue(
+            row,
+            [
+              "houseNo",
+              "house no",
+              "house number",
+              "ઘર નંબર",
+              "ઘર નં",
+              "મકાન નંબર",
+              "મકાન નં"
+            ]
+          )
+        );
+
+
+      /*
+        MOBILE
+      */
+
+      const ownerMobile =
+        cleanValue(
+          findValue(
+            row,
+            [
+              "ownerMobile",
+              "mobile",
+              "mobile no",
+              "mobile number",
+              "મોબાઇલ",
+              "મોબાઈલ",
+              "મોબાઇલ નંબર"
+            ]
+          )
+        );
+
+
+      /*
+        PREVIOUS DUE
+      */
+
+      const previousDue =
+        numberValue(
+          findValue(
+            row,
+            [
+              "previousDue",
+              "previous due",
+              "old due",
+              "બાકી",
+              "જૂનો બાકી",
+              "પાછલો બાકી"
+            ]
+          )
+        );
+
+
+      /*
+        HOUSE TAX
+      */
+
+      const houseTax =
+        numberValue(
+          findValue(
+            row,
+            [
+              "houseTax",
+              "house tax",
+              "મકાન વેરો",
+              "ઘર વેરો"
+            ]
+          )
+        );
+
+
+      /*
+        WATER TAX
+      */
+
+      const waterTax =
+        numberValue(
+          findValue(
+            row,
+            [
+              "waterTax",
+              "water tax",
+              "પાણી વેરો"
+            ]
+          )
+        );
+
+
+      /*
+        CLEANING TAX
+      */
+
+      const cleaningTax =
+        numberValue(
+          findValue(
+            row,
+            [
+              "cleaningTax",
+              "cleaning tax",
+              "સફાઈ વેરો",
+              "સફાઇ વેરો"
+            ]
+          )
+        );
+
+
+      /*
+        DRAINAGE TAX
+      */
+
+      const drainageTax =
+        numberValue(
+          findValue(
+            row,
+            [
+              "drainageTax",
+              "drainage tax",
+              "ગટર વેરો"
+            ]
+          )
+        );
+
+
+      /*
+        OTHER TAX
+      */
+
+      const otherTax =
+        numberValue(
+          findValue(
+            row,
+            [
+              "otherTax",
+              "other tax",
+              "અન્ય વેરો"
+            ]
+          )
+        );
+
+
+      /*
+        TOTAL TAX
+      */
+
+      let taxAmount =
+        numberValue(
+          findValue(
+            row,
+            [
+              "taxAmount",
+              "tax amount",
+              "total",
+              "total tax",
+              "કુલ",
+              "કુલ વેરો",
+              "કુલ રકમ",
+              "વેરો"
+            ]
+          )
+        );
+
+
+      /*
+        YEAR
+      */
+
+      const taxYear =
+        cleanValue(
+          findValue(
+            row,
+            [
+              "taxYear",
+              "tax year",
+              "year",
+              "વર્ષ",
+              "વેરા વર્ષ"
+            ]
+          )
+        );
+
+
+      /*
+        LAST DATE
+      */
+
+      const lastDate =
+        cleanValue(
+          findValue(
+            row,
+            [
+              "lastDate",
+              "last date",
+              "છેલ્લી તારીખ",
+              "છેલ્લી તારીખ"
+            ]
+          )
+        );
+
+
+      /*===================================
+        SKIP COMPLETELY EMPTY ROW
+      ===================================*/
+
+      const hasAnyData =
+        propertyNo ||
+        ownerName ||
+        houseNo ||
+        ownerMobile ||
+        taxAmount ||
+        houseTax ||
+        waterTax ||
+        cleaningTax ||
+        drainageTax ||
+        otherTax;
+
+
+      if (!hasAnyData) {
+
+        continue;
+      }
+
+
+      /*===================================
+        SKIP HEADER / TITLE ROWS
+      ===================================*/
+
+      if (
+        propertyNo
+          .toLowerCase()
+          .includes("મિલકત નંબર") ||
+        propertyNo
+          .toLowerCase()
+          .includes("property number")
+      ) {
+
+        continue;
+      }
+
+
+      /*===================================
+        CALCULATE TOTAL IF NOT PROVIDED
+      ===================================*/
+
+      if (
+        taxAmount === 0
+      ) {
+
+        taxAmount =
+          previousDue +
+          houseTax +
+          waterTax +
+          cleaningTax +
+          drainageTax +
+          otherTax;
+      }
+
+
+      /*===================================
+        FIRESTORE RECORD
+      ===================================*/
+
+      const propertyData = {
+
+        propertyNo:
+          propertyNo,
+
+        houseNo:
+          houseNo,
+
+        ownerName:
+          ownerName,
+
+        ownerMobile:
+          ownerMobile,
+
+        /*
+          તમારા હાલના display code
+          mobile field પણ વાંચે છે,
+          એટલે બંને રાખ્યા છે.
+        */
+
+        mobile:
+          ownerMobile,
+
+        previousDue:
+          previousDue,
+
+        houseTax:
+          houseTax,
+
+        waterTax:
+          waterTax,
+
+        cleaningTax:
+          cleaningTax,
+
+        drainageTax:
+          drainageTax,
+
+        otherTax:
+          otherTax,
+
+        taxAmount:
+          taxAmount,
+
+        taxYear:
+          taxYear,
+
+        lastDate:
+          lastDate,
+
+        /*
+          Excel tracking
+        */
+
+        importId:
+          importId,
+
+        importFileName:
+          fileName,
+
+        createdAt:
+          serverTimestamp()
+      };
+
+
+      propertyRecords.push(
+        propertyData
+      );
+    }
+
+
+    /*=====================================
+      CHECK RECORDS
+    =====================================*/
+
+    if (
+      !propertyRecords.length
+    ) {
+
+      alert(
+        "❌ Excelમાંથી કોઈ Property Record ઓળખી શકાયો નથી.\n\n" +
+        "Excelના Column Names તપાસો."
+      );
+
+      if (progress) {
+
+        progress.innerText =
+          "❌ કોઈ Record મળ્યો નથી.";
+      }
+
+      return;
+    }
+
+
+    console.log(
+      "✅ Records Ready:",
+      propertyRecords.length
+    );
+
+
+    /*=====================================
+      SAVE PROPERTY DATA
+      BATCH LIMIT = 500
+    =====================================*/
+
+    let savedCount = 0;
+
+
+    for (
+      let start = 0;
+      start <
+      propertyRecords.length;
+      start += 450
+    ) {
+
+      const batch =
+        writeBatch(db);
+
+
+      const chunk =
+        propertyRecords.slice(
+          start,
+          start + 450
+        );
+
+
+      chunk.forEach(
+        (propertyData) => {
+
+          const propertyRef =
+            doc(
+              collection(
+                db,
+                "propertyTax"
+              )
+            );
+
+
+          batch.set(
+            propertyRef,
+            propertyData
+          );
+        }
+      );
+
+
+      await batch.commit();
+
+
+      savedCount +=
+        chunk.length;
+
+
+      if (progress) {
+
+        progress.innerText =
+          `⏳ ${savedCount} / ${propertyRecords.length} Records Save થઈ રહ્યા છે...`;
+      }
+    }
+
+
+    /*=====================================
+      SAVE IMPORT INFORMATION
+    =====================================*/
+
+    await setDoc(
+      doc(
+        db,
+        "propertyTaxImports",
+        importId
+      ),
+      {
+
+        importId:
+          importId,
+
+        fileName:
+          fileName,
+
+        recordCount:
+          propertyRecords.length,
+
+        importedRecords:
+          savedCount,
+
+        importedAt:
+          serverTimestamp(),
+
+        status:
+          "Completed"
+      }
+    );
+
+
+    /*=====================================
+      COMPLETE
+    =====================================*/
+
+    if (progress) {
+
+      progress.innerText =
+        `✅ Import Complete - ${savedCount} Records`;
+    }
+
+
+    alert(
+      `✅ Excel Import સફળતાપૂર્વક પૂર્ણ થયો.\n\n` +
+      `📄 File: ${fileName}\n` +
+      `📊 Excel Records: ${rows.length}\n` +
+      `💾 Saved Records: ${savedCount}\n` +
+      `🆔 Import ID: ${importId}`
+    );
+
+
+    /*=====================================
+      RESET
+    =====================================*/
+
+    input.value =
+      "";
+
+
+    /*
+      PROPERTY LIST RELOAD
+    */
+
+    if (
+      typeof loadPropertyTax ===
+      "function"
+    ) {
+
+      await loadPropertyTax();
+    }
+
+
+    /*
+      EXCEL LIST RELOAD
+    */
+
+    if (
+      typeof recoveredLoadExcelImportList ===
+      "function"
+    ) {
+
+      await recoveredLoadExcelImportList();
+    }
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ EXCEL IMPORT ERROR:",
+      error
+    );
+
+
+    const progress =
+      document.getElementById(
+        "importProgress"
+      );
+
+
+    if (progress) {
+
+      progress.innerText =
+        "❌ Importમાં ભૂલ આવી.";
+    }
+
+
+    alert(
+      "❌ Excel Import Error:\n\n" +
+      error.message
+    );
+  }
 }
   
       /*=========================================
